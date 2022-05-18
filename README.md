@@ -8,3 +8,8 @@ To scrape data from this website, I have used Selenium. Initially I created a Sc
    + a method to bypass cookies
    + distinct methods used for navigating the webpages associated with this website
    + methods that scrape data across distinct webpages and return a list of links containing the specific books we want to scrape data from
+
+## Part 2.
+Using the methods defined for Part 1, I obtained a list containing links to individual book pages. For the second part of this project, I have used this list to collect metadata from each book. This included unstructured data (such as book title, author, isbn, number of page, publisher, etc), as well as structured data (links to the book cover, that were also locally downlaoded and saved). For this part, I have defined another method that selects the 'Click and Collect' button on the book page and inputs a desired postcode to check the book availability. This method returns information about the closest bookshop that carries this desired book (bookstore name, address & schedule, as well as the earliest collection time).
+
+
