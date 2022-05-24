@@ -12,4 +12,13 @@ To scrape data from this website, I have used Selenium. Initially I created a Sc
 ## Part 2.
 Using the methods defined for Part 1, I obtained a list containing links to individual book pages. For the second part of this project, I have used this list to collect metadata from each book. This included unstructured data (such as book title, author, isbn, number of page, publisher, etc), as well as structured data (links to the book cover, that were also locally downlaoded and saved). For this part, I have defined another method that selects the 'Click and Collect' button on the book page and inputs a desired postcode to check the book availability. This method returns information about the closest bookshop that carries this desired book (bookstore name, address & schedule, as well as the earliest collection time).
 
+The structured data was saved in json files, and the unstructured data(images = book covers) was downloaded locally.
 
+## Part 3.
+In this part I have implemented unit test for all my public methods. This was done unising unittest. The methods included:
+   + testing that the correct folders were created - for data saving
+   + testing that the correct book urls were return
+   + testing that the correct number of books were scraped
+   + testing that the saved metadata was the right data type/format
+   + 
+    
