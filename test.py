@@ -3,6 +3,7 @@ from selenium import webdriver
 import os
 import sys
 import json
+import random
 
 sys.path.append(".")
 
@@ -15,17 +16,18 @@ class TestScraper(unittest.TestCase):
     def setUp(self):
 
         """Set up method initialises an instance of Scraper class 
-        and uses its .open_webpage() method to open desired url"""
+        and navigates to desired category page"""
 
         self.webscraper = Scraper("https://www.waterstones.com")
-        self.webscraper.open_webpage()
-
-
-    def test_open_webpage(self):
-
-        """ Test is successfull if the opened webpage has correct data type"""
-        self.assertEqual(type(self.webscraper.driver), type(webdriver.Chrome()))
     
+    def test_scraper_flags(self):
+
+        """Test is successful if correct category argument is passed to the class"""
+
+        os.chdir('../..')
+        self.assertEqual(self.webscraper.default_choice, self.webscraper.args.category)
+    
+    #webpage request.get access denied - this method overcomes that
     @staticmethod
     def get_status(logs):
 
@@ -48,145 +50,59 @@ class TestScraper(unittest.TestCase):
                 except:
                     pass
 
-    def test_bypass_cookies(self):
 
-        """ Test is successful if clicking the cookies button returns a HTTP status code 200 = success """
+    def test_create_metadata_folders(self):
 
-        self.webscraper.bypass_cookies()
-        logs = self.webscraper.driver.get_log('performance')
-        self.assertEqual(self.get_status(logs), 200)
+        """Test is successful if correct folder name is created
+        and working directory is correctly changed"""
 
+        os.chdir('../..')
+        expected_output = os.path.join(os.getcwd(), 'test_folder')
+        self.webscraper.create_metadata_folders('test_folder')
+        self.assertEqual(expected_output, os.getcwd())
 
-    def test_access_link(self):
-
-        """Test is successful if it will raise an error when trying to access a non-existing link"""
-
-        self.webscraper.bypass_cookies()
-        
-        incorrect_values = ['string', 'not a  link', 'not a link again']
-        self.assertRaises(ValueError, self.webscraper.access_link, incorrect_values)    
-
-
-    def test_get_book_category(self):
-         
-      """Test is successful if the Scraper.get_book_category() returns the correct link, which is verified
-      by comparing the url ending with the category"""
-
-      self.webscraper.bypass_cookies()
-
-      for num in range(0,5):
-          self.assertTrue(type(self.webscraper.get_book_category(num)) is str)
-          with self.subTest(num):
-              if num == 0:
-                  self.assertEqual(self.webscraper.get_book_category(num).split('/')[-1], 'fiction')
-              elif num == 1:
-                  self.assertEqual(self.webscraper.get_book_category(num).split('/')[-1], 'crime-thrillers-mystery')
-              elif num == 2:
-                  self.assertEqual(self.webscraper.get_book_category(num).split('/')[-1], 'science-fiction-fantasy-horror')
-              elif num == 3:
-                  self.assertEqual(self.webscraper.get_book_category(num).split('/')[-1], 'graphic-novels-manga')
-              else:
-                  self.assertEqual(self.webscraper.get_book_category(num).split('/')[-1], 'non-fiction-books')
-
-    
-    def test_get_book_subcategory(self):
-
-        """Test is successful if Scraper.get_book_subcategory() method correctly returns a string
-        and this string is a correct url"""
-
-        self.webscraper.bypass_cookies()
-        # num values will run this test on each book category: category[0] = fiction, etc
-        for num in range(0,5):
-            with self.subTest(num):
-                #get subcategory list for this category
-                self.webscraper.get_book_subcategory(num)
-                #for each subcategory
-                for item in self.webscraper.books_subcategories:
-                    # checks that item is a string
-                    self.assertIsInstance(item, str)
-                    # checks if link is valid -> tries to access it
-                    self.webscraper.access_link(item)
-                    logs = self.webscraper.driver.get_log('performance')
-                    self.assertEqual(self.get_status(logs), 200)
-                    
-
-    def test_access_subcategory_list_page(self):
-
-        """Test is successful if for each subcategory we can acccess
-        Our best <subcategory> header"""
-
-        self.webscraper.bypass_cookies()
-        #looking at all subcatgories from category[0] = fiction
-        self.webscraper.get_book_subcategory(0)
-        for num in range(0, len(self.webscraper.books_subcategories)):
-            with self.subTest(num):
-                #for each subTest, access one subcategory link
-                self.webscraper.access_link(self.webscraper.books_subcategories[num])
-                #access Our best <subcategory> page to get full book list
-                self.webscraper.access_subcategory_list_page()
-                logs = self.webscraper.driver.get_log('performance')
-                self.assertEqual(self.get_status(logs), 200)
-    
-    
     def test_get_book_list(self):
 
-        """Test is successful if for each Our best <subcategory> page we find 24 books/page
-        (the number of items/each page)"""
+        """Test is successful if for each book list page we scrape 24 books
+        (the number of items/each page) and we can access each book link 
+        """
 
-        self.webscraper.bypass_cookies()
-        # access Our best <subcategory> for category [0] = fiction, subcategory[0] = crime-thrillers-mystery
-        self.webscraper.get_book_subcategory(0)
-        self.webscraper.access_link(self.webscraper.books_subcategories[0])
-        self.webscraper.access_subcategory_list_page()
-        #num = number of pages to get book list from
-        for num in range(1,5):
+        #randomly select a subcategory
+        index = random.randint(0,4)
+        test_subcategory = self.webscraper.subcategories[index]
+        #randomly select number of pages to scrape/subcategory
+        number_pages = random.randint(1,2)
+        book_list = self.webscraper.get_books_list(test_subcategory, number_pages)
+        self.assertEqual(len(book_list), 24 * number_pages)
+
+        for num in range(len(book_list)):
             with self.subTest(num):
-                self.webscraper.get_books_list(num)
-                self.assertEqual(len(self.webscraper.get_books_list(num)), 24*num)
-
+                self.webscraper.driver.get(book_list[num])
+                logs = self.webscraper.driver.get_log('performance')
+                self.assertEqual(self.get_status(logs), 200)
 
     def test_collect_book_metadata(self):
 
         """Test is successful if the metadata collected from individual book page
         has the correct data format/type"""
-
-        self.webscraper.bypass_cookies()
-        # goes to fiction -> crime-thrillers-mystery -> collects data from 1 page of Our best <subcategory>
-        self.webscraper.get_book_subcategory(0)
-        self.webscraper.access_link(self.webscraper.books_subcategories[0])
-        self.webscraper.access_subcategory_list_page()
-        lst = self.webscraper.get_books_list(1)
-        # collects metadata from all books in the list
-        metadata_list = self.webscraper.collect_book_metadata(lst, "WC1 0RW")
+        #randomly select a subcategory
+        index = random.randint(0,4)
+        test_subcategory = self.webscraper.subcategories[index]
+        #randomly select number of pages to scrape/subcategory
+        number_pages = random.randint(1,2)
+        book_list = self.webscraper.get_books_list(test_subcategory, number_pages)
+        
+        self.webscraper.collect_book_metadata(book_list, "WC1 0RW")
+        metadata_list = self.webscraper.metadata_list
 
         for item in range(0, len(metadata_list)):
             with self.subTest(item):
-                self.assertTrue(str.isdigit(metadata_list[item]["Height"]))
-                self.assertTrue(str.isdigit(metadata_list[item]["Width"]))
+                self.assertTrue(str.isdigit(metadata_list[item]["Height"]) or metadata_list == 'No information')
+                self.assertTrue(str.isdigit(metadata_list[item]["Width"]) or metadata_list == 'No information')
                 self.assertTrue(len(metadata_list[item]["Published Date"].split('-')) == 3)
                 self.assertEqual(metadata_list[item]["Unique id"], metadata_list[item]["ISBN"])
 
-    def test_save_book_covers(self):
-
-        """Test is successful if number of downloaded images corresponds to number of 
-        book links that have been scraped (1image/book)"""
-
-        self.webscraper.bypass_cookies()
-        # goes to fiction -> crime-thrillers-mystery -> collects data from 1 page of Our best <subcategory>
-        self.webscraper.get_book_subcategory(0)
-        self.webscraper.access_link(self.webscraper.books_subcategories[0])
-        self.webscraper.access_subcategory_list_page()
-        # number of pages to get book links from
-        number_pages = 1
-        lst = self.webscraper.get_books_list(number_pages)
-        # collect desired metadata
-        self.webscraper.collect_book_metadata(lst, "WC1 0RW")
-        # cd into corresponding category/subcategory image folder
-        os.chdir(os.path.join(os.getcwd(), 'raw_data/fiction/crime-thrillers-mystery/images'))
-        self.webscraper.save_book_covers()
-        self.assertEqual(len(os.listdir()), 24 * number_pages)
     
-
     def tearDown(self):
 
         """Tear down method closes and terminates the opened webpage"""
