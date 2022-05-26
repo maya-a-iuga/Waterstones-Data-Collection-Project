@@ -1,4 +1,5 @@
 from random import choices
+from tkinter import E
 from selenium import webdriver
 import time
 import uuid
@@ -8,6 +9,11 @@ import urllib.request
 from pydantic import validate_arguments
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import argparse
+import boto3
+import pandas as pd
+from sqlalchemy import create_engine
+import requests
+from tqdm import tqdm
 
 
 class Scraper():
@@ -59,7 +65,7 @@ class Scraper():
         self._open_webpage()
         self._bypass_cookies()
         # creates raw_data folder where all data will be saved
-        self.create_metadata_folders('raw_data')
+        self._create_metadata_folders('raw_data')
         # gets list of book subcategories
         self.subcategories = self._get_book_subcategory()
        
@@ -80,41 +86,51 @@ class Scraper():
         time.sleep(2)
         # find cookies button xpath & clicks button
         accept_cookies_button = self.driver.find_element_by_xpath('//*[@id="onetrust-accept-btn-handler"]')
-        accept_cookies_button.click()   
+        accept_cookies_button.click()
 
-    def scraper_flags(self):
+    @staticmethod
+    @validate_arguments
+    def _create_metadata_folders(directory_name: str):
 
-        """This method allows for user to raise a flag corresponding
-        to the book category they want data scraped from"""
+        """This method creates different folders for data storage
+        
+        Parameters
+        ----------
+        directory_name : str
+            a string representing the name of a new folder to be created and cd into
+        """
+        current_dir = os.getcwd()
+        future_dir = os.path.join(current_dir, directory_name)
+        if os.path.exists(future_dir):
+            os.chdir(future_dir)
+        else:
+            os.mkdir(directory_name)
+            os.chdir(future_dir)   
 
-        # first flag is for choosing desired book category
+    def _scraper_flags(self):
+
+        """This method allows for user to raise different flags to customise
+        what data will be scraped"""
+ 
         self.parser = argparse.ArgumentParser(description = "Which main book category you want to select?")
-
-        # f for fiction default = argparse.SUPPRESS
+        # flag for book category to scrape from
         self.default_choice = 'f'
         self.parser.add_argument(
             '--category', 
             default = self.default_choice, 
-            choices = ['f', 'c', 'sf', 'g', 'nf']
+            choices = ['f', 'c', 's', 'g', 'n'],
+            nargs = '?',
+            help  ='something'
             )
-        #self.parser.add_argument('--c',  action = "store_true", default = False)
-        # sf for science-fiction
-        #self.parser.add_argument('--sf', action = "store_true", default = False)
-        # g for graphic novels and manga
-        #self.parser.add_argument('--g', action = "store_true", default = False)
-        # nf for non-fiction
-        #self.parser.add_argument('--nf', action = "store_true", default = False)
-        self.args = self.parser.parse_args(args=[])
+        # flag = scrape from individual subcategories, no flag = scrape across them
+        self.parser.add_argument('--subcategory', action = 'store_false')
+        
+        return self.parser.parse_args()
 
     def _get_book_category(self) -> list:
         
         """ This method gets the desired book category to scrape from and
         returns the link to this category
-
-        Parameters
-        ----------
-        index : int
-            integer representing the position in the book category list
 
         Returns
         -------
@@ -122,18 +138,16 @@ class Scraper():
             a string containing the url corresponding to the book category
         """
         #get user flag
-        self.scraper_flags()
-
-        #first part of xpath always navigated to desktop version of website: desktop-navs
+        self.args = self._scraper_flags()
+        #get all a elements containing the book categories
         desktop_version_path = self.driver.find_element_by_xpath('//div[@class = "navs-container desktop-navs"]/ul[@class = "subnavs"][1]/li[2]')
-        # get all a elements containing the book categories
         books_category_path = desktop_version_path.find_elements_by_xpath('.//span[@class = "name nav-header-link"]/a')
         # we only interested in 5 categories: fiction, crime, science finction, graphic novel and non-fiction
         books_category_path = books_category_path[0:5]
         # get link to desired categories
         books_categories = [item.get_attribute('href') for item in books_category_path]
 
-        flag_dictionary = {0 : 'f', 1 : 'c', 2 : 'sf', 3 : 'g', 4 : 'nf'}
+        flag_dictionary = {0 : 'f', 1 : 'c', 2 : 's', 3 : 'g', 4 : 'n'}
         for key, flag in flag_dictionary.items():
             if (flag is self.args.category) == True:
                 self.book_category = books_categories[key]
@@ -151,18 +165,19 @@ class Scraper():
         """
         
         self.subcategory_list = []
-       
         self._get_book_category()
         #access category webpage
         self.driver.get(self.book_category)
+
         #create category folder inside raw_data folder
         category_folder = self.book_category.split('/')[-1]
-        self.create_metadata_folders(category_folder)
+        self._create_metadata_folders(category_folder)
     
         subcategories_path = self.driver.find_elements_by_xpath('//div[@class = "span3 tablet-span6 mobile-span6"]//a')
         #get links to subcategories
         self.books_subcategories = [item.get_attribute('href') for item in subcategories_path]
         self.subcategory_list.append(self.books_subcategories)
+
         return sum(self.subcategory_list, [])
 
     
@@ -188,7 +203,7 @@ class Scraper():
             pass
                         
     @validate_arguments    
-    def get_books_list(self, subcategory: str, number_pages: int) -> list:
+    def _get_books_list(self, subcategory: str, number_pages: int) -> list:
 
         """ This is a navigation method that accesses subcategory book list,
         then scrolls through the page. It changes between consecutive pages
@@ -236,22 +251,9 @@ class Scraper():
             self.final_book_list.append(self.books_list)
 
         return sum(self.final_book_list, []) 
-
-    @validate_arguments
-    def _generate_unique_id(self, link: str):
-
-        """ Method generates unique id for each book using its webpage url
-
-        Parameters
-        ----------
-        link : str
-            a string corresponding to a webpage url
-        """
-
-        self.metadata_dictionary["Unique id"] = link.split('/')[-1]
         
     @validate_arguments
-    def collect_book_metadata(self, books_list: list, postcode: str) -> list:
+    def _collect_book_metadata(self, books_list: list, postcode: str) -> list:
 
         """ This method collects metadata from individual book pages
 
@@ -270,20 +272,19 @@ class Scraper():
         """
         self.metadata_list = []
 
-        for item in books_list:
+        for item in tqdm(books_list):
 
+            time.sleep(0.01)
             # access individual book page
             self.driver.get(item)
 
             #generate unique ids from page id and uuid
-            self._generate_unique_id(item)
+            self.metadata_dictionary["Unique id"] = item.split('/')[-1]
             self.metadata_dictionary["UUID"] = str(uuid.uuid4())
             
             # get all the structured metadata
             book_title = self.driver.find_element_by_xpath('//span[@class = "book-title"]').text
             self.metadata_dictionary["Book Title"] = book_title
-            author = self.driver.find_element_by_xpath('//span[@itemprop = "author"]').text
-            self.metadata_dictionary["Author"] = author
             isbn = self.driver.find_element_by_xpath('//span[@itemprop = "isbn"]').get_attribute("innerHTML")
             self.metadata_dictionary["ISBN"] = isbn    
             current_price = self.driver.find_element_by_xpath('//b[@itemprop = "price"]').text
@@ -292,6 +293,12 @@ class Scraper():
             self.metadata_dictionary["Published Date"] = published_date
             publisher = self.driver.find_element_by_xpath('//span[@itemprop = "publisher"]').get_attribute("innerHTML")
             self.metadata_dictionary["Publisher"] = publisher
+
+            try:
+                author = self.driver.find_element_by_xpath('//span[@itemprop = "author"]').text
+            except:
+                author = 'No author'
+            self.metadata_dictionary["Author"] = author
             
             # 'Coming soon' books are missing some of the metadata other books have
             try:
@@ -313,13 +320,14 @@ class Scraper():
 
             try:
                 height = self.driver.find_element_by_xpath('//span[@itemprop = "height"]').get_attribute("innerHTML")
-                self.metadata_dictionary["Height"] = height
                 width = self.driver.find_element_by_xpath('//span[@itemprop = "width"]').get_attribute("innerHTML")                          
-                self.metadata_dictionary["Width"] = width
-
+        
             except:
                 self.metadata_dictionary["Height"] = 'No information'
                 self.metadata_dictionary["Width"] = 'No information'
+
+            self.metadata_dictionary["Height"] = height
+            self.metadata_dictionary["Width"] = width
 
             # get the image links/unstructured data
             image_links = self.driver.find_element_by_xpath('//div[@class = "book-image-main"]//img').get_attribute("src")
@@ -327,9 +335,9 @@ class Scraper():
 
             #find the click & collect metadata - cooming soon books do not have this metadata
             try:
-                self._click_and_collect(postcode)
+               self._click_and_collect(postcode)
             except:
-                pass
+               pass
 
             # wait for results to load 
             time.sleep(4)
@@ -355,13 +363,9 @@ class Scraper():
                self.metadata_dictionary["Schedule"] = "Book not available for collection today"
             
             # now append dictionary to a list of dictionaries - 
-            # TODO: not sure needed anymore
             dictionary_copy = self.metadata_dictionary.copy()
             self.metadata_list.append(dictionary_copy) 
-        #save data
-        self._save_json_file()
-        self.create_metadata_folders('images')
-        self._save_book_covers()
+        
        
     @validate_arguments
     def _click_and_collect(self, postcode: str):
@@ -384,24 +388,6 @@ class Scraper():
         go_button = self.driver.find_element_by_xpath('//button[@id = "searchterm"]')
         go_button.click()
 
-    @staticmethod
-    @validate_arguments
-    def create_metadata_folders(directory_name: str):
-
-        """This method creates different folders for data storage
-        
-        Parameters
-        ----------
-        directory_name : str
-            a string representing the name of a new folder to be created and cd into
-        """
-        current_dir = os.getcwd()
-        future_dir = os.path.join(current_dir, directory_name)
-        if os.path.exists(future_dir):
-            os.chdir(future_dir)
-        else:
-            os.mkdir(directory_name)
-            os.chdir(future_dir)
 
     def _save_json_file(self):
 
@@ -409,7 +395,6 @@ class Scraper():
 
         with open(os.path.join(os.getcwd(), 'data.json'), 'w') as folder:
             json.dump(self.metadata_list, folder)
-
 
     def _save_book_covers(self):
 
@@ -424,22 +409,168 @@ class Scraper():
             urllib.request.install_opener(opener)
             urllib.request.urlretrieve(image_url, save_path)
 
+    def scrape_individual_subcategories(self, number_pages : int, postcode : str):
+
+        """This method scrapes data from all subcategories and
+        locally saves it into organised subfolders
+        
+        Parameters
+        ----------
+        number_pages : int
+            int representing number of pages to scrape/subcategory
+        postcode : str
+            a string representing a valid London postcode
+        """
+
+        self.metadata_all_categories = []
+
+        if bool(self.subcategories) == True:
+            for subcategory in tqdm(self.subcategories):
+
+                time.sleep(0.01)
+                #create subcategory folder
+                subcategory_folder = subcategory.split('/')[-1]
+                self._create_metadata_folders(subcategory_folder)
+                #collect & save metadata for all the books
+                book_list = self._get_books_list(subcategory, number_pages)
+                self._collect_book_metadata(book_list, postcode) 
+                self.metadata_all_categories += self.metadata_list
+
+                #save data
+                self._save_json_file()
+                self._create_metadata_folders('images')
+                self._save_book_covers()
+                #go back to category folder
+                os.chdir('../..')
+            
+        #not all categories have subcategories        
+        else:
+            book_list = self._get_books_list('', number_pages)
+            self._collect_book_metadata(book_list, postcode)
+            self.metadata_all_categories = self.metadata_list
+
+            #save data
+            self._save_json_file()
+            self._create_metadata_folders('images')
+            self._save_book_covers()
+
+        #upload raw data folder to s3
+        self._upload_folder_to_s3()
+
+    def scrape_across_subcategories(self, number_pages : int, postcode : str):
+        
+        """This method scrapes data from all subcategories pooled together (no book duplicates)
+        and locally saves it one file
+
+        Parameters
+        ----------
+        number_pages : int
+            int representing number of pages to scrape/subcategory
+        postcode : str
+            a string representing a valid London postcode
+        """
+
+        final_book_list = []
+        #create folder
+        os.chdir('../..')
+        self._create_metadata_folders('all_books_data')
+
+        if bool(self.subcategories) == True:
+            for subcategory in tqdm(self.subcategories):
+                
+                time.sleep(0.01)
+                #collect & save metadata for all the books
+                final_book_list += self._get_books_list(subcategory, number_pages)
+        
+        else:
+            book_list = self._get_books_list('', number_pages)
+            final_book_list = book_list
+
+        #remove duplicates from book list
+        final_book_list = list(dict.fromkeys(final_book_list))
+       
+        self._collect_book_metadata(final_book_list, postcode)
+        #save data
+        #self._save_json_file()
+        #self._create_metadata_folders('images')
+        #self._save_book_covers()
+
+        #save locally saved data in aws rds database
+        #self._create_rds_database()
+        #upload images directly to cloud
+        #self._upload_images_to_s3() 
+    
+    @staticmethod
+    def _upload_folder_to_s3():
+
+        """This method uploads both json files and image data to S3 bucket"""
+
+        s3_resource = boto3.resource('s3')
+        try:
+            bucket_name = "aicorebucketmaya"
+            my_bucket = s3_resource.Bucket(bucket_name)
+            root_path = '/Users/maya/Desktop/AiCore_git/Data_Collection_Project/raw_data'
+
+            for path, subdirs, files in os.walk(root_path):
+                path = path.replace("\\","/")
+                directory_name = path.replace(root_path[:-8],"")
+                #TODO: only nested for loop - cant avoid it really
+                for file in files:
+                    my_bucket.upload_file(os.path.join(path, file), directory_name+'/'+file)
+
+        except Exception as err:
+            print(err)
+    
+    def _create_rds_database(self):
+        
+        """This method converts json file to pandas dataframe
+        and uploads it to AWS RDS as a database"""
+
+        self.pddataframe = pd.DataFrame(self.metadata_list)
+        #connect to the database
+        DATABASE_TYPE = 'postgresql'
+        DBAPI = 'psycopg2'
+        ENDPOINT = 'aicoredb.cwmfykce5lky.us-east-1.rds.amazonaws.com'
+        USER = 'postgres'
+        PASSWORD = 'mayaisthebest'
+        PORT = 5432
+        DATABASE = 'postgres'
+        engine = create_engine(f"{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{ENDPOINT}:{PORT}/{DATABASE}")
+        self.pddataframe.to_sql('book_dataset', engine, if_exists='replace')
+
+    
+    def _upload_images_to_s3(self):
+        
+        """This method uploads images to S3 bucket using their corresponding url"""
+
+        s3_resource = boto3.resource('s3')
+        try:
+            bucket_name = "aicorebucketmaya"
+            my_bucket = s3_resource.Bucket(bucket_name)
+         
+            for i in range(len(self.metadata_list)):
+                image_url = self.metadata_list[i]["Link to image"]
+                image_filename = image_url.split('/')[-1].split('.')[0]
+                s3_filename = 'images/' + image_filename + '.jpg'
+
+                req_for_image = requests.get(image_url, stream=True)
+                file_object_from_req = req_for_image.raw
+                req_data = file_object_from_req.read()
+
+                my_bucket.put_object(Key=s3_filename, Body=req_data)
+
+        except Exception as e:
+            return e
+
+        
 if __name__ == "__main__":
      
     waterstones = Scraper("https://www.waterstones.com")
-
-    if bool(waterstones.subcategories) == True:
-        for subcategory in waterstones.subcategories:
-            #create subcategory folder
-            subcategory_folder = subcategory.split('/')[-1]
-            waterstones.create_metadata_folders(subcategory_folder)
-            #collect & save metadata for all the books
-            book_list = waterstones.get_books_list(subcategory, 1)
-            waterstones.collect_book_metadata(book_list, "WC1 0RW")
-            #go back to category folder
-            os.chdir('../..')
-    #not all categories have subcategories        
-    else:
-        book_list = waterstones.get_books_list('', 1)
-        waterstones.collect_book_metadata(book_list, "WC1 0RW")
-
+    print(waterstones.args.subcategory)
+    # for when you want to save raw data locally
+    if waterstones.args.subcategory == False:
+        waterstones.scrape_individual_subcategories(1, "WC1 0RW")
+    # if you want to duplicates book list
+    elif waterstones.args.subcategory == True:
+        waterstones.scrape_across_subcategories(8, "WC1 0RW")
+        print(len(waterstones.metadata_list))
