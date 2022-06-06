@@ -7,22 +7,18 @@ import string
 sys.path.append("/Users/maya/Desktop/AiCore_git/Data_Collection_Project/Waterstones-Data-Collection-Project/project")
 import project_module_2
 
-del sys.argv[1:]
-sys.argv[0] = 'test/test_module.py'
-
-
 class TestScraper(unittest.TestCase):
 
     """This class has all the unit tests for our webscraper"""
     
     def setUp(self):
 
-        """Set up method initialises an instance of Scraper class 
+        """Set up method initialises an instance of Run_Scraper class 
         and navigates to desired category page"""
+        
+        self.webscraper = project_module_2.Run_Scraper(cat_flag = 'g', subcategory_flag= 'store_false', headless_flag = 'store_false')
+        
 
-        #self.webscraper = Scraper("https://www.waterstones.com", cat_flag = 'f', subcategory_flag= 'store_false')
-        self.webscraper = project_module_2.Run_Scraper(cat_flag = 'g', subcategory_flag= 'store_false')
-       
     def test_scrape_individual_subcategories(self):
         
         """Test is successful is correct number of books and correct
@@ -45,7 +41,7 @@ class TestScraper(unittest.TestCase):
         #checks correct numbers of books were scraped
         self.assertEqual(len(self.webscraper.metadata_all_categories), number_pages * number_subcategories * books_per_page)
 
-        # checks correct metadata was collected - postcode is correct
+        # checks correct metadata was collected for correct postcode
         for item in range(0, 5):
             with self.subTest(item): 
                 self.assertNotEqual(self.webscraper.metadata_all_categories[item]["Bookstore Name"], 'Information not available')
@@ -76,15 +72,13 @@ class TestScraper(unittest.TestCase):
             number_subcategories = 1
             self.assertEqual(len(self.webscraper.final_book_list), number_pages * number_subcategories * books_per_page)
         
-        #if the randomly generated postcode is not a real UK postcode
-        print(requests.get('https://api.postcodes.io/postcodes/' + random_postcode).json()["status"])
-        if requests.get('https://api.postcodes.io/postcodes/' + random_postcode).json()["status"] == 404:
-            for item in range(0, 5):
-                with self.subTest(item): 
-                    self.assertEqual(self.webscraper.metadata_all_categories[item]["Bookstore Name"], 'Information not available')
-                    self.assertEqual(self.webscraper.metadata_all_categories[item]["Bookstore Address"], 'Information not available')
-                    self.assertEqual(self.webscraper.metadata_all_categories[item]["Schedule"], 'Information not available')
-                    self.assertEqual(self.webscraper.metadata_all_categories[item]["Collection Time"], 'Information not available')
+        #checks correct metadata was collected for incorrect postcode
+        for item in range(0, 5):
+            with self.subTest(item): 
+                self.assertEqual(self.webscraper.metadata_all_categories[item]["Bookstore Name"], 'Information not available')
+                self.assertEqual(self.webscraper.metadata_all_categories[item]["Bookstore Address"], 'Information not available')
+                self.assertEqual(self.webscraper.metadata_all_categories[item]["Schedule"], 'Information not available')
+                self.assertEqual(self.webscraper.metadata_all_categories[item]["Collection Time"], 'Information not available')
       
     
     def tearDown(self):
@@ -94,8 +88,7 @@ class TestScraper(unittest.TestCase):
         self.webscraper.driver.close()
         self.webscraper.driver.quit()
 
-
 if __name__ == "__main__":
 
-    unittest.main(argv = [''],verbosity = 2, exit=False)
+   unittest.main(argv = [''],verbosity = 2, exit=False)
     
