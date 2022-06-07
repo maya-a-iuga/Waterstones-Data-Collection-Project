@@ -13,8 +13,8 @@ import requests
 import sqlalchemy
 from tqdm import tqdm
 import psycopg2
-
 from project_module_1_GUI_version import Scraper 
+
 
 class Run_Scraper():
 
@@ -24,10 +24,13 @@ class Run_Scraper():
     Parameters
     ----------
     cat_flag : str
-        string representing a flag for the book category
+        string representing the book category
     subcategory_flag : str
-        string representing a flag for the book subcategory      
+        string representing the book subcategory
+    headless_flag : str
+        string representing the driver mode (headless or not)    
     """
+
 
     def __init__(self, cat_flag: str, subcategory_flag: str, headless_flag: str):
 
@@ -42,12 +45,14 @@ class Run_Scraper():
         self.subcategories = self.scraper.subcategories
         self.driver = self.scraper.driver
 
+
     def _save_json_file(self):
 
         """This method saves the structured data in a json file"""
 
         with open(os.path.join(os.getcwd(), 'data.json'), 'w') as folder:
             json.dump(self.scraper.metadata_list, folder)
+
 
     def _save_book_covers(self):
 
@@ -61,6 +66,7 @@ class Run_Scraper():
             opener.addheaders = [('User-Agent', 'MyApp/1.0')]
             urllib.request.install_opener(opener)
             urllib.request.urlretrieve(image_url, save_path)
+
 
     @staticmethod
     def _upload_folder_to_s3():
@@ -83,6 +89,7 @@ class Run_Scraper():
         except Exception as err:
             print(err)
     
+
     def _create_rds_database(self):
         
         """This method converts json file to pandas dataframe
@@ -118,6 +125,7 @@ class Run_Scraper():
             #else:
              #   rds_entry.to_sql('book_dataset', engine, if_exists = 'append')
                   
+
     def _upload_images_to_s3(self):
         
         """This method uploads images to S3 bucket using their corresponding url"""
@@ -140,6 +148,7 @@ class Run_Scraper():
 
         except Exception as e:
             return e
+
 
     @validate_arguments
     def scrape_individual_subcategories(self, number_pages : int, postcode : str):
@@ -190,6 +199,7 @@ class Run_Scraper():
         #upload raw data folder to s3
         #self._upload_folder_to_s3()
 
+
     @validate_arguments
     def scrape_across_subcategories(self, number_pages : int, postcode : str):
         
@@ -234,6 +244,7 @@ class Run_Scraper():
         #self._create_rds_database()
         #upload images directly to cloud
         #self._upload_images_to_s3() 
+        
         
 if __name__ == "__main__":
     
