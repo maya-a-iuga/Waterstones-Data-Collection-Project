@@ -40,8 +40,9 @@ This class can be called with different CLI flags, which provides a personalised
        + no flag (value is True) : opens up Google Chrome
 
 ## GUI webscraper version
-The GUI directory also provides a user interface version of this webscraper. To use this GUI, you have to run webscraper_GUI.
-   py<img width="490" alt="GUI" src="https://user-images.githubusercontent.com/104773240/172396773-078848f6-05fb-42fd-bd7a-d1728f0873ae.png">
+The GUI directory also provides a user interface version of this webscraper. To use this GUI, you have to run webscraper_GUI.py
+   
+   <img width="490" alt="GUI" src="https://user-images.githubusercontent.com/104773240/172396773-078848f6-05fb-42fd-bd7a-d1728f0873ae.png">
 
 The GUI allows the user to interactively select the three CLI flags mentioned above. Additionally, it allows the user to input two other parameters:
    + Number of pages : this represents the number of pages (one page has 24 books) to scrape for each subcategory
