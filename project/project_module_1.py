@@ -8,7 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 import argparse
 from tqdm import tqdm
-
+import requests
 
 class Scraper():
 
@@ -23,6 +23,8 @@ class Scraper():
         string representing a flag for the book category
     subcategory_flag : str
         string representing a flag for the book subcategory
+    headless_flag : str
+        string representing a flag for driver headless mode
     metadata_dictionary : dict = None
         dictionary will contain metadata about individual book   
     """
@@ -34,9 +36,11 @@ class Scraper():
         """
 
         self.url = url
+       
         self.category_flag = cat_flag
         self.subcategory_flag = subcategory_flag
         self.headless_flag = headless_flag
+
         #create metadata dictionary skeleton
         self.metadata_dictionary = metadata_dictionary
         if self.metadata_dictionary == None:
@@ -59,10 +63,11 @@ class Scraper():
                 "Bookstore Name" : " ",
                 "Bookstore Address" : " ",
                 "Schedule" : " ",
-                
                 "Collection Time" : " "}
+
         self.args = self._scraper_flags()
         print('Chosen category:' + self.args.category)
+
         if self.args.headless == False:        
             options = webdriver.ChromeOptions()
 
@@ -100,6 +105,7 @@ class Scraper():
         accept_cookies_button = self.driver.find_element_by_xpath('//*[@id="onetrust-accept-btn-handler"]')
         accept_cookies_button.click()
 
+
     @staticmethod
     @validate_arguments
     def _create_metadata_folders(directory_name: str):
@@ -111,6 +117,7 @@ class Scraper():
         directory_name : str
             a string representing the name of a new folder to be created and cd into
         """
+
         current_dir = os.getcwd()
         future_dir = os.path.join(current_dir, directory_name)
         if os.path.exists(future_dir):
@@ -119,6 +126,7 @@ class Scraper():
             os.mkdir(directory_name)
             os.chdir(future_dir)
 
+
     #TODO: what does it return? what data type?
     def _scraper_flags(self):
 
@@ -126,7 +134,6 @@ class Scraper():
         what data will be scraped"""
  
         self.parser = argparse.ArgumentParser(description = "Which main book category you want to select?")
-        # flag for book category to scrape from
         
         self.parser.add_argument(
             '--category', 
@@ -139,8 +146,8 @@ class Scraper():
         # flag = scrape from individual subcategories, no flag = scrape across them 
         self.parser.add_argument('--subcategory', action = self.subcategory_flag)
         self.parser.add_argument('--headless', action = self.headless_flag)
-        
         return self.parser.parse_args()
+
 
     def _get_book_category(self) -> list:
         
@@ -152,6 +159,7 @@ class Scraper():
         str
             a string containing the url corresponding to the book category
         """
+
         #get user flag
         self.args = self._scraper_flags()
         #get all a elements containing the book categories
@@ -223,7 +231,8 @@ class Scraper():
             time.sleep(3)
         except:
             pass
-                        
+
+
     @validate_arguments    
     def _get_books_list(self, subcategory: str, number_pages: int) -> list:
 
@@ -243,6 +252,8 @@ class Scraper():
         list
             a list of strings representing the urls to individual book pages
         """
+
+        #if category has multiple subcategories
         try:
             self.driver.get(subcategory)
         except:
@@ -274,6 +285,7 @@ class Scraper():
 
         return sum(self.final_book_list, []) 
         
+
     @validate_arguments
     def _collect_book_metadata(self, books_list: list, postcode: str):
 
@@ -284,9 +296,9 @@ class Scraper():
         book_list : list
             list of strings representing url for individual book pages, as scraped before for the desired subcategories
         postcode : str
-            string representing a valid postcode for London
-            
+            string representing a valid UK postcode
         """
+
         self.metadata_list = []
         print('Acquiring book metadata')
         for item in tqdm(books_list):
@@ -310,41 +322,31 @@ class Scraper():
             self.metadata_dictionary["Published Date"] = published_date
             publisher = self.driver.find_element_by_xpath('//span[@itemprop = "publisher"]').get_attribute("innerHTML")
             self.metadata_dictionary["Publisher"] = publisher
-
+           
+            # 'Coming soon' books & maps are missing some of the metadata other books have
             try:
                 author = self.driver.find_element_by_xpath('//span[@itemprop = "author"]').text
-            except:
-                author = 'No author'
-            self.metadata_dictionary["Author"] = author
-            
-            # 'Coming soon' books are missing some of the metadata other books have
-            try:
                 initial_price = self.driver.find_element_by_xpath('//b[@class = "price-rrp"]').text
-            except:
-                initial_price = 'Coming soon'
-
-            try:
                 no_pages = self.driver.find_element_by_xpath('//span[@itemprop = "numberOfPages"]').text
                 stock = self.driver.find_element_by_xpath('//span[@id = "scope_offer_availability"]').text
                 availability = self.driver.find_element_by_xpath('//p[@class = "stock-message"]').text
-            except:
-                no_pages = 'Coming soon'
-                stock = 'Coming soon'
-                availability = 'Coming soon'
-
-            self.metadata_dictionary["Initial Price"] = initial_price
-            self.metadata_dictionary["Number of Pages"] = no_pages
-            self.metadata_dictionary["Stock"] = stock
-            self.metadata_dictionary["Availability"] = availability
-
-            try:
                 height = self.driver.find_element_by_xpath('//span[@itemprop = "height"]').get_attribute("innerHTML")
                 width = self.driver.find_element_by_xpath('//span[@itemprop = "width"]').get_attribute("innerHTML")                          
         
             except:
-                self.metadata_dictionary["Height"] = 'No information'
-                self.metadata_dictionary["Width"] = 'No information'
+                author = 'No author'
+                initial_price = 'Coming soon'
+                no_pages = 'Coming soon'
+                stock = 'Coming soon'
+                availability = 'Coming soon'
+                height = 'No information'
+                width = 'No information'
 
+            self.metadata_dictionary["Author"] = author
+            self.metadata_dictionary["Initial Price"] = initial_price
+            self.metadata_dictionary["Number of Pages"] = no_pages
+            self.metadata_dictionary["Stock"] = stock
+            self.metadata_dictionary["Availability"] = availability
             self.metadata_dictionary["Height"] = height
             self.metadata_dictionary["Width"] = width
 
@@ -354,7 +356,7 @@ class Scraper():
 
             #find the click & collect metadata - cooming soon books do not have this metadata
             try:
-               self._click_and_collect(postcode)
+                self._click_and_collect(postcode)
             except:
                pass
 
@@ -404,14 +406,16 @@ class Scraper():
         Parameters
         ----------
         postcode : str
-            string representing a valid postcode for London
+            string representing a valid UK postcode 
         """
 
-        click_and_collect_button = self.driver.find_element_by_xpath('//div[@class = "book-actions"]//button[@class = "button button-gold js-open-modal"]')
-        click_and_collect_button.click()
+        #only get this information for valid UK postcodes
+        if requests.get('https://api.postcodes.io/postcodes/' + postcode).json()["status"] != 404:
+            click_and_collect_button = self.driver.find_element_by_xpath('//div[@class = "book-actions"]//button[@class = "button button-gold js-open-modal"]')
+            click_and_collect_button.click()
 
-        search_bar = self.driver.find_element_by_xpath('//input[@placeholder = "Town, city, or postcode"]')
-        time.sleep(2)
-        search_bar.send_keys(postcode)
-        go_button = self.driver.find_element_by_xpath('//button[@id = "searchterm"]')
-        go_button.click()
+            search_bar = self.driver.find_element_by_xpath('//input[@placeholder = "Town, city, or postcode"]')
+            time.sleep(2)
+            search_bar.send_keys(postcode)
+            go_button = self.driver.find_element_by_xpath('//button[@id = "searchterm"]')
+            go_button.click()

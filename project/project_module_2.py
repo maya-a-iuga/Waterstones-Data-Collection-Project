@@ -1,5 +1,3 @@
-
-#from distutils.util import execute
 import time
 import os
 import json
@@ -27,7 +25,9 @@ class Run_Scraper():
     cat_flag : str
         string representing a flag for the book category
     subcategory_flag : str
-        string representing a flag for the book subcategory      
+        string representing a flag for the book subcategory
+    headless_flag : str
+        string representing a flag for driver headless mode      
     """
 
     def __init__(self, cat_flag: str, subcategory_flag: str, headless_flag: str):
@@ -37,11 +37,13 @@ class Run_Scraper():
         """
 
         self.scraper = Scraper("https://www.waterstones.com", cat_flag, subcategory_flag, headless_flag)
+
         self.headless_flag = self.scraper.args.headless
         self.category_flag = self.scraper.args.category
         self.subcategory_flag = self.scraper.args.subcategory
         self.subcategories = self.scraper.subcategories
         self.driver = self.scraper.driver
+
 
     def _save_json_file(self):
 
@@ -49,6 +51,7 @@ class Run_Scraper():
 
         with open(os.path.join(os.getcwd(), 'data.json'), 'w') as folder:
             json.dump(self.scraper.metadata_list, folder)
+
 
     def _save_book_covers(self):
 
@@ -62,6 +65,7 @@ class Run_Scraper():
             opener.addheaders = [('User-Agent', 'MyApp/1.0')]
             urllib.request.install_opener(opener)
             urllib.request.urlretrieve(image_url, save_path)
+
 
     @staticmethod
     def _upload_folder_to_s3():
@@ -84,6 +88,7 @@ class Run_Scraper():
         except Exception as err:
             print(err)
     
+
     def _create_rds_database(self):
         
         """This method converts json file to pandas dataframe
@@ -119,6 +124,7 @@ class Run_Scraper():
             #else:
              #   rds_entry.to_sql('book_dataset', engine, if_exists = 'append')
                   
+
     def _upload_images_to_s3(self):
         
         """This method uploads images to S3 bucket using their corresponding url"""
@@ -142,6 +148,7 @@ class Run_Scraper():
         except Exception as e:
             return e
 
+
     @validate_arguments
     def scrape_individual_subcategories(self, number_pages : int, postcode : str):
 
@@ -151,9 +158,9 @@ class Run_Scraper():
         Parameters
         ----------
         number_pages : int
-            int representing number of pages to scrape/subcategory
+            int representing number of pages to scrape per subcategory
         postcode : str
-            a string representing a valid London postcode
+            a string representing a valid UK postcode
         """
 
         self.metadata_all_categories = []
@@ -189,7 +196,8 @@ class Run_Scraper():
             self._save_book_covers()
 
         #upload raw data folder to s3
-        #self._upload_folder_to_s3()
+        self._upload_folder_to_s3()
+
 
     @validate_arguments
     def scrape_across_subcategories(self, number_pages : int, postcode : str):
@@ -200,9 +208,9 @@ class Run_Scraper():
         Parameters
         ----------
         number_pages : int
-            int representing number of pages to scrape/subcategory
+            int representing number of pages to scrape per subcategory
         postcode : str
-            a string representing a valid London postcode
+            a string representing a valid UK postcode
         """
 
         final_book_list = []
@@ -234,14 +242,15 @@ class Run_Scraper():
         #save locally saved data in aws rds database
         self._create_rds_database()
         #upload images directly to cloud
-        #self._upload_images_to_s3() 
+        self._upload_images_to_s3() 
         
 if __name__ == "__main__":
     
     waterstones = Run_Scraper(cat_flag = 'n', subcategory_flag = 'store_false', headless_flag = 'store_false')
+    postcode = requests.get('https://api.postcodes.io/random/postcodes').json()["result"]["postcode"]
     # for when you want to save raw data locally
     if waterstones.subcategory_flag == False:
-        waterstones.scrape_individual_subcategories(1, "WC1 0RW")
+        waterstones.scrape_individual_subcategories(1, postcode)
     # if you want to remove duplicates book list
     elif waterstones.subcategory_flag == True:
-        waterstones.scrape_across_subcategories(1, "WC1 0RW")
+        waterstones.scrape_across_subcategories(1, postcode)
