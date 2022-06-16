@@ -1,127 +1,211 @@
 import tkinter as tk
+from tkinter import font as tkfont
+from tkinter import *
+import tkinter
+from PIL import ImageTk, Image
 import requests
 from project_module_2_GUI_version import Run_Scraper
+import tkinter.messagebox
+
+class MainFrame(tk.Tk):
+
+    """frame object holding all of our different pages
+    controller of the pages
+    """
+    def __init__(self, *args, **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
+
+        self.titlefont = tkfont.Font(family = 'Helvetica', size = 18, weight = 'bold', slant = 'roman')
+        self.title('Book Scraper')
+        self.geometry('600x400')
+      
+        # frame object that will hold all the pages in
+        container = tk.Frame(self)
+        container.pack(side = "top", fill = "both")
+        #nesw stretch all cardinal directions
+        #container.grid(row = 0, column = 0, sticky = 'nesw')
+        container.grid_rowconfigure(0, weight = 1)
+        container.columnconfigure (0, weight = 1)
+
+        # create empty dictionary to define all pages later on
+        self.listing = {}
+        # will build these pages later on as classes
+        for page in (WelcomePage, PageOne, PageTwo):
+            page_name = page.__name__
+            # new frame object for each page
+            frame = page(parent = container, controller = self)
+            # same as main frame - completely layered without distinction
+            frame.grid(row = 0, column = 0, sticky = 'nesw')
+            
+            self.listing[page_name] = frame
+
+        self.up_frame('WelcomePage')
+        
+    # define first page to pop up/raise
+    def up_frame(self, page_name):
+        page = self.listing[page_name]
+        page.tkraise()
+
+class WelcomePage(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+             
+        self.background_image = ImageTk.PhotoImage(file=r'book.png')
+        self.background_label = tk.Label(self, image = self.background_image)
+        self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.background_label.image = self.background_image
+
+        label = tk.Label(self, text = 'Waterstones Web Scraping Tool', font = controller.titlefont)
+        label.pack(pady = 100)
+
+        button = tk.Button(self, text = 'Get Started', command = lambda: controller.up_frame("PageOne"))
+        button.pack(pady = 75)
 
 
-def run_app():
+class PageOne(tk.Frame):
 
-    """ This function takes the user input from the user interface and
-    feeds it to the Run_Scraper class for initilisation of an instance"""
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent, bg = "#27408B")
+        self.controller = controller
 
-    user_number_pages = int(number_pages_entry.get())
-    user_postcode = str(postcode_entry.get())
-    user_category = str(category_menu.get())
-    user_subcategory = str(subcategory_menu.get())
-    user_headless = str(headless_menu.get())
+        #header label
+        header = tk.Label(self, text = "A reader lives a thousand lives before he dies.", 
+        bg="#27408B", fg="#FFF5EE", height = '5', width='54',font=("Helvetica 18 italic bold"))
+        header.grid(row=0, column=0)
+
+        drop_down_menus = self.initialise_menus()
+        drop_down_menus[0].grid(row=1, column=0, sticky=W, pady=30)
+        drop_down_menus[1].grid(row=1, column=0, pady=30)
+        drop_down_menus[2].grid(row=1, column=0, sticky=E, pady=30, padx=20)
+        #
+        self.intialises_user_entries()
+        number_pages = tk.Label(self, text = "NUMBER OF PAGES:",  height = '5', width='15', bg="#27408B", fg="#F5F5F5")
+        number_pages.grid(column=0, row=2, sticky=W, padx = 50, pady = 5)
+        self.number_pages_entry.grid(column=0, row=2,  sticky=W, padx = 200, pady = 5)
+        postcode = tk.Label(self, text = "POSTCODE:", height = '5', width='15', bg = "#27408B", fg="#F5F5F5")
+        postcode.grid(row=2, column=0, sticky=E, padx = 150, pady = 5)
+        self.postcode_entry.grid(row =2, column=0, sticky=E, padx = 60, pady = 5)
+
+        start_button = tk.Button(self, text = "Start", command = lambda: [controller.up_frame("PageTwo"), self.run_app()], fg = "#548B54",
+        relief = "raised", width = 12, height = 3, font = ("Helvetica 12 bold"))
+        start_button.grid(column = 0, row = 3, sticky = 'e',padx = 65, pady = 2)
+
+        back_button = tk.Button(self, text = "Back", command = lambda: controller.up_frame("WelcomePage"), fg = "#CD5B45",
+        relief = "raised", width = 12, height = 3, font = ("Helvetica 12 bold"))
+        back_button.grid(column = 0, row = 3, sticky = 'w', padx = 65, pady = 2)
+
+
+    def user_input(self):
+        self.category_menu = tk.StringVar()
+        self.category_menu.set("Select Any Category")
+        self.subcategory_menu = tk.StringVar()
+        self.subcategory_menu.set("Scrape Across Subcategories?")
+        self.headless_menu = tk.StringVar()
+        self.headless_menu.set("Run Headless?")
+        self.number_pages = tk.StringVar()
+        self.postcode = tk.StringVar()
+
+
+    def initialise_menus(self):
+        
+        self.user_input()
+        drop_category = tk.OptionMenu(self, self.category_menu, "fiction", "crime-thrillers-mystery", "science-fiction-fantasy-horror","graphic-novels-manga", "non-fiction-books")
+        drop_category.config(width = 15)
+        drop_category.config(height = 2)
+        drop_category.config(bg = "#27408B")
+        drop_subcategory = tk.OptionMenu(self, self.subcategory_menu, "yes", "no")
+        drop_subcategory.config(width = 21)
+        drop_subcategory.config(height = 2)
+        drop_subcategory.config(bg = "#27408B")
+        drop_headless = tk.OptionMenu(self, self.headless_menu, "yes", "no")
+        drop_headless.config(width = 13)
+        drop_headless.config(height = 2)
+        drop_headless.config(bg = "#27408B")
+
+        return drop_category, drop_subcategory, drop_headless
+
+    def intialises_user_entries(self):
+
+        self.number_pages_entry = tk.Entry(self, textvariable = self.number_pages, width = 3, bd=2)
+        self.postcode_entry = tk.Entry(self, textvariable = self.postcode, width = 8, bd =2)
+        #call pre-defined functions on postcode input
+        self.postcode_entry.bind("<KeyRelease>", self.caps_postcode)
+        self.postcode_entry.bind("<Leave>", self.check_postcode)
+        
+
+    def caps_postcode(self, event):
+
+        """ This function capitalises every letter in the postcode"""
+
+        self.postcode.set(self.postcode.get().upper())
+
+    def check_postcode(self, event):
+
+        """ This function will check postcode input corresponds to a 
+        real postcode, otherwise it will randomly generate a new one."""
+
+        postcode_check = self.postcode.get()
+        postcode_status = requests.get('https://api.postcodes.io/postcodes/' + postcode_check).json()["status"]
+        if postcode_status == 404:
+            #self.postcodepostcode.set(requests.get('https://api.postcodes.io/random/postcodes').json()["result"]["postcode"])
+            tkinter.messagebox.showinfo("Error Message", "Not a valid UK postcode, try again!")
+
+    def run_app(self):
+
+        """ This function takes the user input from the user interface and
+        feeds it to the Run_Scraper class for initilisation of an instance"""
+
+        user_number_pages = int(self.number_pages_entry.get())
+        user_postcode = str(self.postcode_entry.get())
+        user_category = str(self.category_menu.get())
+        user_subcategory = str(self.subcategory_menu.get())
+        user_headless = str(self.headless_menu.get())
    
-    waterstones = Run_Scraper(user_category, user_subcategory, user_headless)
-    if waterstones.subcategory_flag == "no":
-        waterstones.scrape_individual_subcategories(user_number_pages, user_postcode)
-    # if you want to remove duplicates book list
-    elif waterstones.subcategory_flag == "yes":
-        waterstones.scrape_across_subcategories(user_number_pages, user_postcode)
+        waterstones = Run_Scraper(user_category, user_subcategory, user_headless)
+        if waterstones.subcategory_flag == "no":
+            waterstones.scrape_individual_subcategories(user_number_pages, user_postcode)
+        # if you want to remove duplicates book list
+        elif waterstones.subcategory_flag == "yes":
+            waterstones.scrape_across_subcategories(user_number_pages, user_postcode)
+            
+        
+class PageTwo(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent, bg = "#27408B")
+        self.controller = controller
+
+        info = Image.open('book.gif')
+        self.frames = info.n_frames
+        self.im = [tk.PhotoImage(file='book.gif',format=f"gif -index {i}") for i in range(self.frames)]
+        count = 0
+        anim = None
+
+        self.background_label = tk.Label(self,image="")
+        self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.background_label.image = self.im
+        
+        self.animation(count)
+
+        label = tk.Label(self, text = 'Everything went well!', font = controller.titlefont)
+        label.pack(pady = 50)
+
+        exit_button = tk.Button(self, text = 'Exit', command = lambda: controller.destroy())
+        exit_button.pack(pady = 125)
+
+    def animation(self, count):
+        global anim
+        im2 = self.im[count]
+
+        self.background_label.configure(image=im2)
+        count += 1
+        if count == self.frames:
+            count = 0
+        anim = self.after(50,lambda :self.animation(count))
 
 
-def close_app():
-
-    """ When called this function will close the user interface"""
-
-    window.destroy()
-
-
-def caps_postcode(event):
-
-    """ This function capitalises every letter in the postcode"""
-
-    postcode1.set(postcode1.get().upper())
-
-
-def check_postcode(event):
-
-    """ This function will check postcode input corresponds to a 
-    real postcode, otherwise it will randomly generate a new one."""
-
-    postcode_check = postcode1.get()
-    postcode_status = requests.get('https://api.postcodes.io/postcodes/' + postcode_check).json()["status"]
-    if postcode_status == 404:
-        postcode1.set(requests.get('https://api.postcodes.io/random/postcodes').json()["result"]["postcode"])
-
-#initialise window
-window = tk.Tk()
-
-window.title("Book Scraper")
-#do not allow for resizing window
-window.resizable("false", "false")
-window.geometry("600x325")
-
-#build frames & arrange them in a grid
-frame_header = tk.Frame(window, borderwidth=2, pady =2)
-centre_frame = tk.Frame(window, borderwidth=2, pady =5)
-bottom_frame = tk.Frame(window, borderwidth=2, pady =5)
-frame_header.grid(row = 0, column = 0)
-centre_frame.grid(row = 1, column = 0)
-bottom_frame.grid(row = 2, column = 0)
-
-#header frame initialisation
-header = tk.Label(frame_header, text = "A reader lives a thousand lives before he dies. \n ~A book webscraping tool", 
-bg="#CDB5CD", fg="#F5F5F5", height = '7', width='54', font=("Helvetica 18 italic"))
-header.grid(row = 0, column = 0)
-
-#centre frame initialisation
-frame_main_1 = tk.Frame(centre_frame, borderwidth = 2, relief = 'sunken')
-frame_main_2 = tk.Frame(centre_frame, borderwidth = 2, relief = 'sunken', bg = "#CDB5CD")
-
-#allow for user input
-category_menu = tk.StringVar()
-category_menu.set("Select Any Category")
-subcategory_menu = tk.StringVar()
-subcategory_menu.set("Scrape Across Subcategories?")
-headless_menu = tk.StringVar()
-headless_menu.set("Run Headless?")
-number_pages1 = tk.StringVar()
-postcode1 = tk.StringVar()
-
-#initialise drop down menus
-drop_category = tk.OptionMenu(frame_main_1, category_menu, "fiction", "crime-thrillers-mystery", "science-fiction-fantasy-horror",
-"graphic-novels-manga", "non-fiction-books")
-drop_category.config(width = 15)
-drop_category.config(height = 2)
-drop_category.config(bg = "#CDB5CD")
-drop_subcategory = tk.OptionMenu(frame_main_1, subcategory_menu, "yes", "no")
-drop_subcategory.config(width = 21)
-drop_subcategory.config(height = 2)
-drop_subcategory.config(bg = "#CDB5CD")
-drop_headless = tk.OptionMenu(frame_main_1, headless_menu, "yes", "no")
-drop_headless.config(width = 13)
-drop_headless.config(height = 2)
-drop_headless.config(bg = "#CDB5CD")
-
-number_pages = tk.Label(frame_main_2, text = "NUMBER OF PAGES:",  height = '2', width='15', bg="#CDB5CD", fg="#F5F5F5")
-postcode = tk.Label(frame_main_2, text = "POSTCODE:", height = '2', width='15', bg = "#CDB5CD", fg="#F5F5F5")
-number_pages_entry = tk.Entry(frame_main_2, textvariable = number_pages1, width = 3, bd=2)
-postcode_entry = tk.Entry(frame_main_2, textvariable = postcode1, width = 8, bd =2)
-#call pre-defined functions on postcode input
-postcode_entry.bind("<KeyRelease>", caps_postcode)
-postcode_entry.bind("<Leave>", check_postcode)
-
-#arrange middle frame inputs
-frame_main_1.pack(fill = 'x', pady = 5)
-frame_main_2.pack(fill = 'x', pady = 2)
-drop_category.pack(side = "left")
-drop_subcategory.pack(side = "left", padx=5)
-drop_headless.pack(side = "right")
-number_pages.pack(side = "left")
-number_pages_entry.pack(side = "left", expand = "True", fill = "x")
-postcode.pack(side = "left")
-postcode_entry.pack(side = "left", expand = "True", fill = 'x')
-
-#bottom frame initialisation
-button_run = tk.Button(bottom_frame, text = "Start", command = run_app, fg = "#548B54",
-relief = "raised", width = 15, height = 2, font = ("Helvetica 15 bold"))
-button_run.grid(column = 0, row = 0, sticky = 'w', padx = 65, pady = 2)
-button_close = tk.Button(bottom_frame, text = "Exit", command = close_app, fg = "#CD5B45",
-relief = "raised", width = 15, height = 2, font = ("Helvetica 15 bold"))
-button_close.grid(column = 1, row = 0, sticky = 'e', padx = 65, pady = 2)
-
-#run Tkinter event loop
-window.mainloop()
+if __name__ == '__main__':
+    app = MainFrame()
+    app.mainloop()
