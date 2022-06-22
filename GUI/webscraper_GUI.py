@@ -1,12 +1,17 @@
 import tkinter as tk
+import requests
+import pygame
+import os
 from tkinter import font as tkfont
 from tkinter import *
-import tkinter
+from tkinter import messagebox
 from PIL import ImageTk, Image
-import requests
 from project_module_2_GUI_version import Run_Scraper
-import tkinter
 
+base_folder = os.path.dirname(__file__)
+image_path = os.path.join(base_folder, 'book.png')
+gif_path = os.path.join(base_folder, 'book.gif')
+song_path = os.path.join(base_folder, "Harry-Potter-Theme-Song.ogg")
 
 class MainFrame(tk.Tk):
 
@@ -39,7 +44,16 @@ class MainFrame(tk.Tk):
             self.listing[page_name] = frame
 
         self.up_frame('WelcomePage')
+
+        #play background song
+        self.play_sound()
         
+    @staticmethod
+    def play_sound():
+        pygame.mixer.init()
+        pygame.mixer.music.load(song_path)
+        pygame.mixer.music.play()
+
     # define first page to pop up
     def up_frame(self, page_name):
         page = self.listing[page_name]
@@ -58,7 +72,7 @@ class WelcomePage(tk.Frame):
         self.controller = controller
 
         # set image as background of frame     
-        self.background_image = ImageTk.PhotoImage(file=r'book.png')
+        self.background_image = ImageTk.PhotoImage(file=image_path)
         self.background_label = tk.Label(self, image = self.background_image)
         self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.background_label.image = self.background_image
@@ -174,7 +188,7 @@ class PageOne(tk.Frame):
         postcode_status = requests.get('https://api.postcodes.io/postcodes/' + postcode_check).json()["status"]
         if postcode_status == 404:
             #self.postcodepostcode.set(requests.get('https://api.postcodes.io/random/postcodes').json()["result"]["postcode"])
-            tkinter.messagebox.showinfo("Error Message", "Not a valid UK postcode, try again!")
+            messagebox.showinfo("Error Message", "Not a valid UK postcode, try again!")
 
 
     def run_app(self):
@@ -208,9 +222,9 @@ class PageTwo(tk.Frame):
         self.controller = controller
         
         # opens every image frame in the gif
-        info = Image.open('book.gif')
+        info = Image.open(gif_path)
         self.frames = info.n_frames
-        self.im = [tk.PhotoImage(file='book.gif',format=f"gif -index {i}") for i in range(self.frames)]
+        self.im = [tk.PhotoImage(gif_path,format=f"gif -index {i}") for i in range(self.frames)]
         count = 0
         anim = None
         
