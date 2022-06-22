@@ -6,7 +6,7 @@ from tkinter import font as tkfont
 from tkinter import *
 from tkinter import messagebox
 from PIL import ImageTk, Image
-from project_module_2_GUI_version import Run_Scraper
+from Scraper_Runner_GUI import Run_Scraper
 
 base_folder = os.path.dirname(__file__)
 image_path = os.path.join(base_folder, 'book.png')
@@ -116,7 +116,7 @@ class PageOne(tk.Frame):
         self.postcode_entry.grid(row =2, column=0, sticky=E, padx = 60, pady = 5)
 
         # Start button will start the scraper & once run will navigate to final page
-        start_button = tk.Button(self, text = "Start", command = lambda: [controller.up_frame("PageTwo"), self.run_app()], fg = "#548B54",
+        start_button = tk.Button(self, text = "Start", command = lambda: [controller.up_frame("PageTwo")], fg = "#548B54",
         relief = "raised", width = 12, height = 3, font = ("Helvetica 12 bold"))
         start_button.grid(column = 0, row = 3, sticky = 'e',padx = 65, pady = 2)
         # Back button to return to welcome page
@@ -224,7 +224,7 @@ class PageTwo(tk.Frame):
         # opens every image frame in the gif
         info = Image.open(gif_path)
         self.frames = info.n_frames
-        self.im = [tk.PhotoImage(gif_path,format=f"gif -index {i}") for i in range(self.frames)]
+        self.im = [tk.PhotoImage(file = gif_path, format=f"gif -index {i}") for i in range(self.frames)]
         count = 0
         anim = None
         
