@@ -191,7 +191,7 @@ class Run_Scraper():
             self.save_data()
 
         #upload raw data folder to s3
-        self._upload_folder_to_s3()
+        #self._upload_folder_to_s3()
 
 
     @validate_arguments
@@ -208,7 +208,7 @@ class Run_Scraper():
             a string representing a valid UK postcode
         """
 
-        final_book_list = []
+        self.final_book_list = []
         #create folder
         os.chdir('../..')
         self.scraper._create_metadata_folders('all_books_data')
@@ -224,15 +224,15 @@ class Run_Scraper():
             book_list = self.scraper._get_books_list('', number_pages)
 
         #remove duplicates from book list
-        final_book_list = list(dict.fromkeys(book_list))
-        self.scraper._collect_book_metadata(final_book_list, postcode)
+        self.final_book_list = list(dict.fromkeys(book_list))
+        self.scraper._collect_book_metadata(self.final_book_list, postcode)
         self.metadata_all_categories = self.scraper.metadata_list
 
         self.save_data()
         #save locally saved data in aws rds database
-        self._create_rds_database()
+        #self._create_rds_database()
         #upload images directly to cloud
-        self._upload_images_to_s3() 
+        #self._upload_images_to_s3() 
         
 if __name__ == "__main__":
     
