@@ -209,6 +209,7 @@ class Run_Scraper():
         """
 
         self.final_book_list = []
+        book_list = []
         #create folder
         os.chdir('../..')
         self.scraper._create_metadata_folders('all_books_data')
