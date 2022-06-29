@@ -1,17 +1,18 @@
+import os
 import tkinter as tk
 import requests
-import pygame
-import os
 from tkinter import font as tkfont
-from tkinter import *
 from tkinter import messagebox
 from PIL import ImageTk, Image
 from Scraper_Runner_GUI import Run_Scraper
+from kivy.core.audio import SoundLoader
+
 
 base_folder = os.path.dirname(__file__)
 image_path = os.path.join(base_folder, 'book.png')
 gif_path = os.path.join(base_folder, 'book.gif')
-song_path = os.path.join(base_folder, "Harry-Potter-Theme-Song.ogg")
+song_path = os.path.join(base_folder, "Harry-Potter-Theme-Song.wav")
+
 
 class MainFrame(tk.Tk):
 
@@ -24,7 +25,7 @@ class MainFrame(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.titlefont = tkfont.Font(family = 'Helvetica', size = 18, weight = 'bold', slant = 'roman')
         self.title('Book Scraper')
-        self.geometry('600x400')
+        self.geometry('700x425')
       
         # frame object that will hold all the pages 
         container = tk.Frame(self)
@@ -43,17 +44,16 @@ class MainFrame(tk.Tk):
             frame.grid(row = 0, column = 0, sticky = 'nesw')
             self.listing[page_name] = frame
 
-        self.up_frame('WelcomePage')
-
-        #play background song
         self.play_sound()
+        self.up_frame('WelcomePage')
         
-    @staticmethod
-    def play_sound():
-        pygame.mixer.init()
-        pygame.mixer.music.load(song_path)
-        pygame.mixer.music.play()
-
+    def play_sound(self):
+        sound = SoundLoader.load(song_path)
+        if sound:
+          sound.loop = True
+          sound.play()
+          
+        
     # define first page to pop up
     def up_frame(self, page_name):
         page = self.listing[page_name]
@@ -103,20 +103,20 @@ class PageOne(tk.Frame):
 
         # adds the drop down menus
         drop_down_menus = self.initialise_menus()
-        drop_down_menus[0].grid(row=1, column=0, sticky=W, pady=30)
+        drop_down_menus[0].grid(row=1, column=0, sticky='W', pady=30)
         drop_down_menus[1].grid(row=1, column=0, pady=30)
-        drop_down_menus[2].grid(row=1, column=0, sticky=E, pady=30, padx=20)
+        drop_down_menus[2].grid(row=1, column=0, sticky='E', pady=30, padx=20)
         # adds the user entry variables
         self.intialises_user_entries()
-        number_pages = tk.Label(self, text = "NUMBER OF PAGES:",  height = '5', width='15', bg="#27408B", fg="#F5F5F5")
-        number_pages.grid(column=0, row=2, sticky=W, padx = 50, pady = 5)
-        self.number_pages_entry.grid(column=0, row=2,  sticky=W, padx = 200, pady = 5)
+        number_pages = tk.Label(self, text = "NUMBER OF PAGES:",  height = '5', width='17', bg="#27408B", fg="#F5F5F5")
+        number_pages.grid(column=0, row=2, sticky='W', padx = 50, pady = 2)
+        self.number_pages_entry.grid(column=0, row=2,  sticky='W', padx = 200, pady = 5)
         postcode = tk.Label(self, text = "POSTCODE:", height = '5', width='15', bg = "#27408B", fg="#F5F5F5")
-        postcode.grid(row=2, column=0, sticky=E, padx = 150, pady = 5)
-        self.postcode_entry.grid(row =2, column=0, sticky=E, padx = 60, pady = 5)
+        postcode.grid(row=2, column=0, sticky='E', padx = 150, pady = 5)
+        self.postcode_entry.grid(row =2, column=0, sticky='E', padx = 60, pady = 5)
 
         # Start button will start the scraper & once run will navigate to final page
-        start_button = tk.Button(self, text = "Start", command = lambda: [controller.up_frame("PageTwo")], fg = "#548B54",
+        start_button = tk.Button(self, text = "Start", command = lambda: [self.run_app(), controller.up_frame("PageTwo")], fg = "#548B54",
         relief = "raised", width = 12, height = 3, font = ("Helvetica 12 bold"))
         start_button.grid(column = 0, row = 3, sticky = 'e',padx = 65, pady = 2)
         # Back button to return to welcome page
@@ -149,7 +149,7 @@ class PageOne(tk.Frame):
         drop_category.config(height = 2)
         drop_category.config(bg = "#27408B")
         drop_subcategory = tk.OptionMenu(self, self.subcategory_menu, "yes", "no")
-        drop_subcategory.config(width = 21)
+        drop_subcategory.config(width = 23)
         drop_subcategory.config(height = 2)
         drop_subcategory.config(bg = "#27408B")
         drop_headless = tk.OptionMenu(self, self.headless_menu, "yes", "no")
@@ -165,7 +165,7 @@ class PageOne(tk.Frame):
         """This method initialises user entries &
         applies pre-defined functions on them"""
 
-        self.number_pages_entry = tk.Entry(self, textvariable = self.number_pages, width = 3, bd=2)
+        self.number_pages_entry = tk.Entry(self, textvariable = self.number_pages, width = 5, bd=2)
         self.postcode_entry = tk.Entry(self, textvariable = self.postcode, width = 8, bd =2)
         #call functions on postcode input
         self.postcode_entry.bind("<KeyRelease>", self.caps_postcode)
@@ -238,7 +238,7 @@ class PageTwo(tk.Frame):
         # display message
         label = tk.Label(self, text = 'Everything went well!', font = controller.titlefont)
         label.pack(pady = 50)
-        # Exit button to quit the GUI
+        # Exit button to quit the GUI    
         exit_button = tk.Button(self, text = 'Exit', command = lambda: controller.destroy())
         exit_button.pack(pady = 125)
 
@@ -259,5 +259,6 @@ class PageTwo(tk.Frame):
 
 
 if __name__ == '__main__':
-    app = MainFrame()
+    app = MainFrame()  
     app.mainloop()
+   

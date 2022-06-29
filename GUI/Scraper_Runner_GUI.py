@@ -213,7 +213,8 @@ class Run_Scraper():
             a string representing a valid London postcode
         """
 
-        final_book_list = []
+        self.final_book_list = []
+        book_list = []
         #create folder
         os.chdir('../..')
         self.scraper._create_metadata_folders('all_books_data')
@@ -223,14 +224,13 @@ class Run_Scraper():
             for subcategory in tqdm(self.scraper.subcategories):
                 time.sleep(0.01)
                 #collect & save metadata for all the books
-                final_book_list += self.scraper._get_books_list(subcategory, number_pages)
+                book_list += self.scraper._get_books_list(subcategory, number_pages)
         
         else:
             book_list = self.scraper._get_books_list('', number_pages)
-            final_book_list = book_list
-
+            
         #remove duplicates from book list
-        self.final_book_list = list(dict.fromkeys(final_book_list))
+        self.final_book_list = list(dict.fromkeys(book_list))
         self.scraper._collect_book_metadata(self.final_book_list, postcode)
         self.metadata_all_categories = self.scraper.metadata_list
         #save data
