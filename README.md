@@ -40,17 +40,47 @@ This class can be called with different CLI flags, which provides a personalised
        + no flag (value is True) : opens up Google Chrome
 
 ## GUI webscraper version
-The GUI directory also provides a user interface version of this webscraper. To use this GUI, you have to run webscraper_GUI.py
-   
-   <img width="490" alt="GUI" src="https://user-images.githubusercontent.com/104773240/172396773-078848f6-05fb-42fd-bd7a-d1728f0873ae.png">
+The GUI directory also provides a user interface version of this webscraper. To use this GUI, you can clone this repository locally and then run webscraper_GUI.py on your machine. Alternatively, you can pull the GUI's Docker image as follow: docker pull mayaaiuga/scraper_gui.latest **(see next section on how to run docker image)**.
 
-The GUI allows the user to interactively select the three CLI flags mentioned above. Additionally, it allows the user to input two other parameters:
+The GUI has a welcome page:
+   
+<img width="459" alt="GUI_welcome_page" src="https://user-images.githubusercontent.com/104773240/176442724-3eca36cc-826d-46c6-bad7-1fbbf38356be.png">
+
+The GUI also allows the user to interactively select the three CLI flags mentioned above. Additionally, it allows the user to input two other parameters:
    + Number of pages : this represents the number of pages (one page has 24 books) to scrape for each subcategory
    + Postcode : this should be a valid UK postcode
-The postcode parameter is used to find the closest Waterstones bookshop at which user can find a desired book (including its address, timetable and a possible collection time). The GUI check if postcode is valid UK postcode, otherwise it randomly selects a UK postcode using the https://postcodes.io API.
+The postcode parameter is used to find the closest Waterstones bookshop at which user can find a desired book (including its address, timetable and a possible collection time). The GUI check if postcode is valid UK postcode using the https://postcodes.io API, otherwise it will ask for a new input.
+   
+   <img width="459" alt="GUI_Page_One" src="https://user-images.githubusercontent.com/104773240/176442921-e6ba1b4e-c350-4f5b-9e15-0ba9065adb42.png">
 
-Pressing **the START button** will cause the webscraper to run. Pressing **the STOP button** will exit the GUI.
+Pressing **the START button** will cause the webscraper to run. Pressing **the BACK button** will return to Welcome Page.
+   
+If everything runs successfully you will be prompted to a final page showcasing Bernard Black (from the Black Books TV show) having a blast in his bookshop (in the form of a GIF).
+   
+   <img width="468" alt="GUI_Page_Two" src="https://user-images.githubusercontent.com/104773240/176443496-d288a6af-0545-42b9-bf6f-ce49597a8f4c.png">
 
+Finally, press **EXIT** to close the GUI.
+   
+## GUI Docker Image.
+The image can be pulled as follows: docker pull mayaaiuga/scraper_gui:latest
+   
+### for MacOS
+In order to be able to run the image locally you will first need to set up the display for the GUI as well as the sound system for the musci accompanying the GUI.
+   + brew install xquartz -for visual display
+   + brew install pulseaudio - for audio
+   
+You will need to set up the pulseaudio network sound by editing */usr/local/Cellar/pulseaudio/<pulse_audio_version>/etc/pulse/default.pa*. Inside default.pa uncommented these two lines: *load-module module-esound-protocol-tcp*, *load-module module-native-protocol-tcp*.
+
+You will need to first find your local IP and set the display to this. This can be done as follows:
+   + IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
+   + export DISPLAY=$IP:0  
+   + export PATH=/usr/X11/bin/xhost:$PATH 
+   + xhost + $IP
+   
+Finally, to run the docker image:
+   + **docker run -it --rm -v ~/.config/pulse:/root/.config/pulse -e DISPLAY=IP:0 -e PULSE_SERVER=IP:4713 scraper_gui:latest**
+   + -v ~/.config/pulse:/root/.config/pulse - makes sure both client and server have same cookie file for pulse audio
+   + -e PULSE_SERVER=IP:4713 -default pulseaudio port is 4713 but you can double check by running *sof -PiTCP -sTCP:LISTEN*
 ## Testing.
 All the public methods have been tested using the unittest module in Python. The tests can be evaluated by running the test_module.py inside the test directory.
 The tests check the following functionalities:
