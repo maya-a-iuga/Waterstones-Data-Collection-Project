@@ -6,13 +6,13 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from Scraper_Runner_GUI import Run_Scraper
 from kivy.core.audio import SoundLoader
-from kivy.clock import Clock
 
-os.environ["GH_TOKEN"] = "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"
+
 base_folder = os.path.dirname(__file__)
 image_path = os.path.join(base_folder, 'book.png')
 gif_path = os.path.join(base_folder, 'book.gif')
 song_path = os.path.join(base_folder, "Harry-Potter-Theme-Song.wav")
+
 
 class MainFrame(tk.Tk):
 
