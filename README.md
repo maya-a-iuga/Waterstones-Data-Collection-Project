@@ -93,12 +93,21 @@ Finally, to run the docker image:
    + **docker run -it --rm -v ~/.config/pulse:/root/.config/pulse -e DISPLAY=IP:0 -e PULSE_SERVER=IP:4713 scraper_gui_firefox:latest**
    + -v ~/.config/pulse:/root/.config/pulse - makes sure both client and server have same cookie file for pulse audio
    + -e PULSE_SERVER=IP:4713 -default pulseaudio port is 4713 but you can double check by running **lsof -PiTCP -sTCP:LISTEN**
+   
+### for Linux
+**1.Setting the visual display**
+   + open **sudo nano /etc/ssh/sshd_config**
+   + set **X11UseForwarding** , **X11UseLocalhost** & **X11Forwarding** to **yes**
+   + set **DISPLAY=:0**
+
+**2.Follow same steps as above for Pulseaudio installation**
+
 ## Testing.
 All the public methods have been tested using the unittest module in Python. The tests can be evaluated by running the test_module.py inside the test directory.
 The tests check the following functionalities:
    + whether the correct number of book links has been scrapped (based on the --subcategory flag value)
    + whether the correct metadata was collected (based on whether provided postcode is a valid or invalid UK postcode)
-   
+      
 ## Cloud storage
 For this project, we are using two AWS services to store data in the cloud, namely S3 and RDS.
 
