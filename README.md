@@ -20,7 +20,7 @@ The project directory has two modules, each containing a class, namely: Scraper 
    + a method that saves each data entry to an AWS RDS database (and additional methods to prevent rescraping the same data twice)
    
 ## Run_Scraper class flags
-This class can be called with different CLI flags, which provides a personalised user experience. There are three CLI flags the user can use when calling project_module_2.py - the module that host the Run_Scrapper class:
+This class can be called with different CLI flags, which provides a personalised user experience. There are three CLI flags the user can use when calling Scraper_Runner.py - the module that host the Run_Scrapper class:
    + **--category flag: this is a mandatory flag which allows the user to select book category to scrape from**
        + --category f : corresponds to fiction 
        + --category c : corresponds to crime-thrillers-mystery 
@@ -38,9 +38,15 @@ This class can be called with different CLI flags, which provides a personalised
        + can be True or False
        + --headless (if given value is False): will run webscraper in headless mode
        + no flag (value is True) : opens up Google Chrome
+       
+#### Note.
+To run Scraper_Runner.py locally you will first need to instal a chromedriver. On MacOS you can use **brew install chromedriver**, then navigate to **usr/local/bin** and run the following **xattr -d com.apple.quarantine chromedriver** to verify the developer. Make sure that your local Chrome version matches the chromedriver version.
 
 ## GUI webscraper version
 The GUI directory also provides a user interface version of this webscraper. To use this GUI, you can clone this repository locally and then run webscraper_GUI.py on your machine. Alternatively, you can pull the GUI's Docker image as follow: docker pull mayaaiuga/scraper_gui.latest **(see next section on how to run docker image)**.
+
+#### Note.
+If you want to run the GUI not in headless mode, you will first need to install geckodriver (**brew install geckodriver** for MacOS).
 
 The GUI has a welcome page:
    
@@ -62,25 +68,29 @@ If everything runs successfully you will be prompted to a final page showcasing 
 Finally, press **EXIT** to close the GUI.
    
 ## GUI Docker Image.
-The image can be pulled as follows: docker pull mayaaiuga/scraper_gui:latest
+The image can be pulled as follows: docker pull mayaaiuga/scraper_gui_firefox:latest. The container will run on Firefox rather than Chrome as the files in **project**. This is to accomodate for Mac M1 chips, where is not yet possible to run headless Chrome.
    
 ### for MacOS
-In order to be able to run the image locally you will first need to set up the display for the GUI as well as the sound system for the musci accompanying the GUI.
-   + brew install xquartz -for visual display
-   + brew install pulseaudio - for audio
-   
-You will need to set up the pulseaudio network sound by editing */usr/local/Cellar/pulseaudio/<pulse_audio_version>/etc/pulse/default.pa*. Inside default.pa uncommented these two lines: *load-module module-esound-protocol-tcp*, *load-module module-native-protocol-tcp*.
+In order to be able to run the image locally you will first need to set up the display for the GUI as well as the sound system for the music accompanying the GUI.
+ 
+**1.Installing Xquartz for visual display**
+   + brew install xquartz
+   + open Xquartz locally 
+   + go to Preferences --> Security --> tick allow connections from network clients & restart Xquartz
+   + get the host IP: **IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')**
+   + set the DISPLAY environment variable: **export DISPLAY=$IP:0**
+   + add PATH to xhost: **export PATH=/usr/X11/bin/xhost:$PATH**
+   + add IP to xhost: **xhost + $IP**
 
-You will need to first find your local IP and set the display to this. This can be done as follows:
-   + IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
-   + export DISPLAY=$IP:0  
-   + export PATH=/usr/X11/bin/xhost:$PATH 
-   + xhost + $IP
+**2.Installing Pulseaudio**
+   + brew install pulseaudio
+   + set up pulseaudio network: go to **/usr/local/Cellar/pulseaudio/<pulse_audio_version>/etc/pulse/default.pa** or **/usr/local/homebrew/Cellar/pulseaudio/<pulse_audio_version>/etc/pulse/default.pa**
+   + uncommented these two lines: **load-module module-esound-protocol-tcp** & **load-module module-native-protocol-tcp**
    
 Finally, to run the docker image:
-   + **docker run -it --rm -v ~/.config/pulse:/root/.config/pulse -e DISPLAY=IP:0 -e PULSE_SERVER=IP:4713 scraper_gui:latest**
+   + **docker run -it --rm -v ~/.config/pulse:/root/.config/pulse -e DISPLAY=IP:0 -e PULSE_SERVER=IP:4713 scraper_gui_firefox:latest**
    + -v ~/.config/pulse:/root/.config/pulse - makes sure both client and server have same cookie file for pulse audio
-   + -e PULSE_SERVER=IP:4713 -default pulseaudio port is 4713 but you can double check by running *sof -PiTCP -sTCP:LISTEN*
+   + -e PULSE_SERVER=IP:4713 -default pulseaudio port is 4713 but you can double check by running **lsof -PiTCP -sTCP:LISTEN**
 ## Testing.
 All the public methods have been tested using the unittest module in Python. The tests can be evaluated by running the test_module.py inside the test directory.
 The tests check the following functionalities:
@@ -130,5 +140,5 @@ A basic CI/CD pipeline was introduced using GitHub Actions. This workflow, means
    
 Lastly, a daily CronJob was set up on the EC2 instance. The CronJob does the following:
    + restarts the webscraper everyday on the EC2 instance
-   + stops and kilss the docker container from the previous job
+   + stops and kills the docker container from the previous job
    + pulls the latest scraper image from DockerHub & runs the scraper.
