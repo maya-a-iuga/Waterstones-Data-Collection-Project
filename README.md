@@ -57,7 +57,9 @@ The GUI also allows the user to interactively select the three CLI flags mention
    + Postcode : this should be a valid UK postcode
 The postcode parameter is used to find the closest Waterstones bookshop at which user can find a desired book (including its address, timetable and a possible collection time). The GUI check if postcode is valid UK postcode using the https://postcodes.io API, otherwise it will ask for a new input.
    
-   <img width="459" alt="GUI_Page_One" src="https://user-images.githubusercontent.com/104773240/176442921-e6ba1b4e-c350-4f5b-9e15-0ba9065adb42.png">
+   <img width="510" alt="GUI_Page_One" src="https://user-images.githubusercontent.com/104773240/176708689-f7c48edc-2f78-4698-a938-801e15838455.png">
+
+The email filed is used to send the user a book recommendation list on their email, based on the category they picked.
 
 Pressing **the START button** will cause the webscraper to run. Pressing **the BACK button** will return to Welcome Page.
    
