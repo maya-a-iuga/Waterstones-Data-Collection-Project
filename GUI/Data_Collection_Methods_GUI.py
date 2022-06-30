@@ -59,7 +59,7 @@ class Scraper():
             options.add_argument("user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005 Safari/537.36'")
             options.add_argument("window-size=1920,1080")
 
-            self.driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),options=options)
+            self.driver = webdriver.Firefox(options=options)
 
         elif self.headless_flag == "no":
             self.driver = webdriver.Firefox()
@@ -79,7 +79,7 @@ class Scraper():
         """ This method bypasses cookies on the website page"""
 
         # find cookies button xpath & clicks button
-        WebDriverWait(self.driver, 30).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="onetrust-accept-btn-handler"]'))).click()
+        WebDriverWait(self.driver, 45).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="onetrust-accept-btn-handler"]'))).click()
 
 
     @staticmethod
