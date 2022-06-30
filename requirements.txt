@@ -4,9 +4,8 @@ Pillow==9.1.1
 psycopg2==2.9.3
 psycopg2_binary==2.9.3
 pydantic==1.9.1
-pygame==2.1.2
 requests==2.27.1
-selenium==3.141.0
+selenium==4.3.0
 SQLAlchemy==1.4.36
 tqdm==4.64.0
 webdriver_manager==3.7.0
