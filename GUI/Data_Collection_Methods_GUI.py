@@ -1,6 +1,7 @@
 import time
 import uuid
 import os
+from sqlalchemy import except_all
 from tqdm import tqdm
 from selenium import webdriver
 from pydantic import validate_arguments
@@ -10,6 +11,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+
 
 class Scraper():
 
@@ -275,19 +277,24 @@ class Scraper():
             # 'Coming soon' books & maps are missing some of the metadata other books have
             try:
                 author = self.driver.find_element('xpath', '//span[@itemprop = "author"]').text
+            except:
+                author = 'No author'
+            try:
                 initial_price = self.driver.find_element('xpath', '//b[@class = "price-rrp"]').text
+            except:
+                initial_price = 'No information'
+            try:
                 no_pages = self.driver.find_element('xpath', '//span[@itemprop = "numberOfPages"]').text
                 stock = self.driver.find_element('xpath', '//span[@id = "scope_offer_availability"]').text
                 availability = self.driver.find_element('xpath', '//p[@class = "stock-message"]').text
-                height = self.driver.find_element('xpath', '//span[@itemprop = "height"]').get_attribute("innerHTML")
-                width = self.driver.find_element('xpath', '//span[@itemprop = "width"]').get_attribute("innerHTML")                          
-        
             except:
-                author = 'No author'
-                initial_price = 'Coming soon'
                 no_pages = 'Coming soon'
                 stock = 'Coming soon'
                 availability = 'Coming soon'
+            try:
+                height = self.driver.find_element('xpath', '//span[@itemprop = "height"]').get_attribute("innerHTML")
+                width = self.driver.find_element('xpath', '//span[@itemprop = "width"]').get_attribute("innerHTML")                         
+            except:
                 height = 'No information'
                 width = 'No information'
 
