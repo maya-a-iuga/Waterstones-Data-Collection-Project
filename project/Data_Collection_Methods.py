@@ -77,7 +77,7 @@ class Scraper():
 
         time.sleep(2)
         # find cookies button xpath & clicks button
-        accept_cookies_button = self.driver.find_element_by_xpath('//*[@id="onetrust-accept-btn-handler"]')
+        accept_cookies_button = self.driver.find_element('xpath', '//*[@id="onetrust-accept-btn-handler"]')
         accept_cookies_button.click()
 
 
@@ -143,8 +143,8 @@ class Scraper():
         #get user flag
         self.args = self._scraper_flags()
         #get all a elements containing the book categories
-        desktop_version_path = self.driver.find_element_by_xpath('//div[@class = "navs-container desktop-navs"]/ul[@class = "subnavs"][1]/li[2]')
-        books_category_path = desktop_version_path.find_elements_by_xpath('.//span[@class = "name nav-header-link"]/a')
+        desktop_version_path = self.driver.find_element('xpath', '//div[@class = "navs-container desktop-navs"]/ul[@class = "subnavs"][1]/li[2]')
+        books_category_path = desktop_version_path.find_elements('xpath', './/span[@class = "name nav-header-link"]/a')
         # we only interested in 5 categories: fiction, crime, science finction, graphic novel and non-fiction
         books_category_path = books_category_path[0:5]
         # get link to desired categories
@@ -183,7 +183,7 @@ class Scraper():
         category_folder = book_category.split('/')[-1]
         self._create_metadata_folders(category_folder)
     
-        subcategories_path = self.driver.find_elements_by_xpath('//div[@class = "span3 tablet-span6 mobile-span6"]//a')
+        subcategories_path = self.driver.find_elements('xpath', '//div[@class = "span3 tablet-span6 mobile-span6"]//a')
         #get links to subcategories
         books_subcategories = [item.get_attribute('href') for item in subcategories_path]
         subcategory_list.append(books_subcategories)
@@ -197,16 +197,16 @@ class Scraper():
         clicks the see all/see more button to access the book list from this subcategory
         """
                 
-        header_path = self.driver.find_element_by_xpath('//header[@class = "span12 pages-header-row"]')
+        header_path = self.driver.find_element('xpath', '//header[@class = "span12 pages-header-row"]')
         #find see all button - sometimes called see more but same xpath
-        see_all_button = header_path.find_element_by_xpath('./a[@class = "button button-teal"]')
+        see_all_button = header_path.find_element('xpath', './a[@class = "button button-teal"]')
         see_all_button.click()
         time.sleep(3)
         
         #sometimes the pages containing full books list are nested, e.g our best thriller crime - our best thriller 
         try:
-            header_path = self.driver.find_element_by_xpath('//header[@class = "span12 pages-header-row"]')
-            see_all_button = header_path.find_element_by_xpath('./a[@class = "button button-teal"]')
+            header_path = self.driver.find_element('xpath', '//header[@class = "span12 pages-header-row"]')
+            see_all_button = header_path.find_element('xpath', './a[@class = "button button-teal"]')
             see_all_button.click()
             time.sleep(3)
         except:
@@ -254,7 +254,7 @@ class Scraper():
         while i <= number_pages:
 
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            books_list = self.driver.find_elements_by_xpath('//div[@class = "image-wrap"]/a')
+            books_list = self.driver.find_elements('xpath', '//div[@class = "image-wrap"]/a')
             books_list = [item.get_attribute('href') for item in books_list]
             #goes to next page
             i += 1
@@ -293,26 +293,26 @@ class Scraper():
             metadata_dictionary["UUID"] = str(uuid.uuid4())
             
             # get all the structured metadata
-            book_title = self.driver.find_element_by_xpath('//span[@class = "book-title"]').text
+            book_title = self.driver.find_element('xpath', '//span[@class = "book-title"]').text
             metadata_dictionary["Book Title"] = book_title
-            isbn = self.driver.find_element_by_xpath('//span[@itemprop = "isbn"]').get_attribute("innerHTML")
+            isbn = self.driver.find_element('xpath', '//span[@itemprop = "isbn"]').get_attribute("innerHTML")
             metadata_dictionary["ISBN"] = isbn    
-            current_price = self.driver.find_element_by_xpath('//b[@itemprop = "price"]').text
+            current_price = self.driver.find_element('xpath', '//b[@itemprop = "price"]').text
             metadata_dictionary["Current Price"] = current_price
-            published_date = (self.driver.find_element_by_xpath('//meta[@itemprop = "datePublished"]')).get_attribute('content')
+            published_date = (self.driver.find_element('xpath', '//meta[@itemprop = "datePublished"]')).get_attribute('content')
             metadata_dictionary["Published Date"] = published_date
-            publisher = self.driver.find_element_by_xpath('//span[@itemprop = "publisher"]').get_attribute("innerHTML")
+            publisher = self.driver.find_element('xpath', '//span[@itemprop = "publisher"]').get_attribute("innerHTML")
             metadata_dictionary["Publisher"] = publisher
            
             # 'Coming soon' books & maps are missing some of the metadata other books have
             try:
-                author = self.driver.find_element_by_xpath('//span[@itemprop = "author"]').text
-                initial_price = self.driver.find_element_by_xpath('//b[@class = "price-rrp"]').text
-                no_pages = self.driver.find_element_by_xpath('//span[@itemprop = "numberOfPages"]').text
-                stock = self.driver.find_element_by_xpath('//span[@id = "scope_offer_availability"]').text
-                availability = self.driver.find_element_by_xpath('//p[@class = "stock-message"]').text
-                height = self.driver.find_element_by_xpath('//span[@itemprop = "height"]').get_attribute("innerHTML")
-                width = self.driver.find_element_by_xpath('//span[@itemprop = "width"]').get_attribute("innerHTML")                          
+                author = self.driver.find_element('xpath', '//span[@itemprop = "author"]').text
+                initial_price = self.driver.find_element('xpath', '//b[@class = "price-rrp"]').text
+                no_pages = self.driver.find_element('xpath', '//span[@itemprop = "numberOfPages"]').text
+                stock = self.driver.find_element('xpath', '//span[@id = "scope_offer_availability"]').text
+                availability = self.driver.find_element('xpath', '//p[@class = "stock-message"]').text
+                height = self.driver.find_element('xpath', '//span[@itemprop = "height"]').get_attribute("innerHTML")
+                width = self.driver.find_element('xpath', '//span[@itemprop = "width"]').get_attribute("innerHTML")                          
         
             except:
                 author = 'No author'
@@ -332,7 +332,7 @@ class Scraper():
             metadata_dictionary["Width"] = width
 
             # get the image links/unstructured data
-            image_links = self.driver.find_element_by_xpath('//div[@class = "book-image-main"]//img').get_attribute("src")
+            image_links = self.driver.find_element('xpath', '//div[@class = "book-image-main"]//img').get_attribute("src")
             metadata_dictionary["Link to image"] = image_links
 
             #find the click & collect metadata - cooming soon books do not have this metadata
@@ -344,10 +344,10 @@ class Scraper():
             # wait for results to load 
             time.sleep(4)
             try:
-                bookstore_name = self.driver.find_element_by_xpath('//div[@class = "store"][1]//div[@class = "title"]').get_attribute("innerHTML")
-                bookstore_address = self.driver.find_element_by_xpath('//div[@class = "store"][1]//div[@class = "address"]').get_attribute("innerHTML")
-                bookstore_schedule = self.driver.find_element_by_xpath('//div[@class = "store"][1]//div[@class = "hours"]').get_attribute("innerHTML")
-                collection_time = self.driver.find_element_by_xpath('//div[@class = "store"][1]//div[4]').get_attribute("innerHTML")
+                bookstore_name = self.driver.find_element('xpath', '//div[@class = "store"][1]//div[@class = "title"]').get_attribute("innerHTML")
+                bookstore_address = self.driver.find_element('xpath', '//div[@class = "store"][1]//div[@class = "address"]').get_attribute("innerHTML")
+                bookstore_schedule = self.driver.find_element('xpath', '//div[@class = "store"][1]//div[@class = "hours"]').get_attribute("innerHTML")
+                collection_time = self.driver.find_element('xpath', '//div[@class = "store"][1]//div[4]').get_attribute("innerHTML")
             
             except:
                 #if book is not published already
@@ -392,11 +392,11 @@ class Scraper():
 
         #only get this information for valid UK postcodes
         if requests.get('https://api.postcodes.io/postcodes/' + postcode).json()["status"] != 404:
-            click_and_collect_button = self.driver.find_element_by_xpath('//div[@class = "book-actions"]//button[@class = "button button-gold js-open-modal"]')
+            click_and_collect_button = self.driver.find_element('xpath', '//div[@class = "book-actions"]//button[@class = "button button-gold js-open-modal"]')
             click_and_collect_button.click()
 
-            search_bar = self.driver.find_element_by_xpath('//input[@placeholder = "Town, city, or postcode"]')
+            search_bar = self.driver.find_element('xpath', '//input[@placeholder = "Town, city, or postcode"]')
             time.sleep(2)
             search_bar.send_keys(postcode)
-            go_button = self.driver.find_element_by_xpath('//button[@id = "searchterm"]')
+            go_button = self.driver.find_element('xpath', '//button[@id = "searchterm"]')
             go_button.click()
