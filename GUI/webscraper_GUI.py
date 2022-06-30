@@ -6,13 +6,13 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from Scraper_Runner_GUI import Run_Scraper
 from kivy.core.audio import SoundLoader
+from kivy.clock import Clock
 
-
+os.environ["GH_TOKEN"] = "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"
 base_folder = os.path.dirname(__file__)
 image_path = os.path.join(base_folder, 'book.png')
 gif_path = os.path.join(base_folder, 'book.gif')
 song_path = os.path.join(base_folder, "Harry-Potter-Theme-Song.wav")
-
 
 class MainFrame(tk.Tk):
 
@@ -25,7 +25,7 @@ class MainFrame(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.titlefont = tkfont.Font(family = 'Helvetica', size = 18, weight = 'bold', slant = 'roman')
         self.title('Book Scraper')
-        self.geometry('700x425')
+        self.geometry('910x435')
       
         # frame object that will hold all the pages 
         container = tk.Frame(self)
@@ -48,10 +48,9 @@ class MainFrame(tk.Tk):
         self.up_frame('WelcomePage')
         
     def play_sound(self):
-        sound = SoundLoader.load(song_path)
-        if sound:
-          sound.loop = True
-          sound.play()
+        self.sound = SoundLoader.load(song_path)
+        if self.sound:
+           self.sound.play()
           
         
     # define first page to pop up
