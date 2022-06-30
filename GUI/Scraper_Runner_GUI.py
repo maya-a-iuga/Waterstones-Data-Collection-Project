@@ -7,6 +7,7 @@ import boto3
 import pandas as pd
 import sqlalchemy
 import psycopg2
+import smtplib
 from sqlalchemy.sql import text 
 from sqlalchemy import create_engine
 from tqdm import tqdm
@@ -240,11 +241,43 @@ class Run_Scraper():
         #self._create_rds_database()
         #upload images directly to cloud
         #self._upload_images_to_s3() 
-        
+    
+    def send_email(self, receiver_address : str):
+
+        """This method will send the user an email with a
+        book recommendation list
+        Parameters
+        ----------
+        receiver_address : str
+            a string representing the user email address
+        """
+       
+        email_address = 'maya_iuga@yahoo.ro'     
+        Subject = 'Subject: Book recommendation list\n\n'
+        message_list = " "
+
+        for i in range(0,5):
+            message_list += f'{i + 1}: Book title: {self.metadata_all_categories[i]["Book Title"]}, Author name: {self.metadata_all_categories[i]["Author"]}'
+            message_list += '\n'
+            message_list += f'  Closest bookshop you can get this book is {self.metadata_all_categories[i]["Bookstore Name"]}, at {self.metadata_all_categories[i]["Bookstore Address"]}'
+            message_list += '\n'
+            message_list += '  '
+
+        content = f' Dear User, \n This is your recommendation list: \n {message_list} \n\n ' 
+        footer = 'Best wishes, \n Maya Iuga'  
+        passcode = os.environ["EMAIL_PASSCODE"]        
+        conn = smtplib.SMTP_SSL('smtp.mail.yahoo.com', 465) 
+        conn.ehlo()
+        conn.login(email_address, passcode)
+        conn.sendmail(email_address,
+                      receiver_address,
+                      Subject + content + footer)
+        conn.quit()
+
         
 if __name__ == "__main__":
     
-    waterstones = Run_Scraper(cat_flag = 'fiction', subcategory_flag = 'yes', headless_flag = 'no')
+    waterstones = Run_Scraper(cat_flag = 'graphic-novels-manga', subcategory_flag = 'yes', headless_flag = 'no')
 
     if waterstones.subcategory_flag == "no":
         waterstones.scrape_individual_subcategories(1, "WC1 0RW")
