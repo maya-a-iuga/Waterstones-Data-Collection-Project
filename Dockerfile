@@ -17,5 +17,5 @@ COPY . .
 #install dependencies
 RUN pip install -r ./requirements.txt
 #
-ENTRYPOINT ["python", "project/project_module_2.py"]
+ENTRYPOINT ["python", "project/Scraper_Runner.py"]
 CMD ["--category", "--subcategory", "--headless"]
