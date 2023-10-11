@@ -8,6 +8,9 @@ from pydantic import validate_arguments
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from tqdm import tqdm
+from selenium import webdriver
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium.common.exceptions import NoSuchElementException
 
 
 class Scraper():
@@ -44,24 +47,31 @@ class Scraper():
         self.args = self._scraper_flags()
         print('Chosen category:' + self.args.category)
 
-        if self.args.headless == False:        
-            options = webdriver.ChromeOptions()
+        # Get the GitHub token from the environment variable
+        github_token = os.getenv('GH_TOKEN') 
 
+        options = webdriver.FirefoxOptions()
+        options.add_argument(f"--GH_TOKEN={github_token}")  # Pass the token as an argument to Firefox
+        
+        if self.args.headless == False:
             options.add_argument("--no-sandbox") 
             options.add_argument("--headless")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--disable-setuid-sandbox") 
             options.add_argument('--disable-gpu')
-        
+            
             options.add_argument("user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005 Safari/537.36'")
             options.add_argument("window-size=1920,1080")
 
-            self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
-
+            self.driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=options)
+        
         elif self.args.headless == True:
-            self.driver = webdriver.Chrome()
+
+            self.driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=options)
+
             
         self.browser = self.driver.get(self.url)
+        #time.sleep(10)
 
         # open webpage & bypass cookies
         self._bypass_cookies()
@@ -143,13 +153,25 @@ class Scraper():
         #get user flag
         self.args = self._scraper_flags()
         #get all a elements containing the book categories
-        desktop_version_path = self.driver.find_element('xpath', '//div[@class = "navs-container desktop-navs"]/ul[@class = "subnavs"][1]/li[2]')
-        books_category_path = desktop_version_path.find_elements('xpath', './/span[@class = "name nav-header-link"]/a')
-        # we only interested in 5 categories: fiction, crime, science finction, graphic novel and non-fiction
+        try:
+            desktop_version_path = self.driver.find_element('xpath', '//div[@class="navs-container desktop-navs"]/ul[@class="subnavs"][1]/li')
+            # Element was found
+            # You can perform actions on the element here
+        except NoSuchElementException:
+            # Element was not found
+            print("Element not found or correctly identified")
+        
+        try:
+            books_category_path = desktop_version_path.find_elements('xpath', './/span[@class = "name nav-header-link"]/a')
+        except NoSuchElementException:
+            # Element was not found
+            print("Element not found or correctly identified")
+        
+
+        # we only interested in 5 categories: fiction, crime, science fiction, graphic novel and non-fiction
         books_category_path = books_category_path[0:5]
         # get link to desired categories
         books_categories = [item.get_attribute('href') for item in books_category_path]
-
         flag_dictionary = {0 : 'f', 1 : 'c', 2 : 's', 3 : 'g', 4 : 'n'} 
 
         for key, flag in flag_dictionary.items():

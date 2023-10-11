@@ -216,7 +216,7 @@ class Run_Scraper():
 
         if bool(self.scraper.subcategories) == True:
             print('Acquiring book list')
-            for subcategory in tqdm(self.scraper.subcategories):
+            for subcategory in tqdm(self.scraper.subcategories[0:1]):
                 time.sleep(0.01)
                 #collect & save metadata for all the books
                 book_list += self.scraper._get_books_list(subcategory, number_pages)
