@@ -13,13 +13,11 @@ steps:
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
 
-- task: Kubernetes@1
+- task: KubernetesManifest@1
   inputs:
-    connectionType: 'Azure Resource Manager'
-    azureSubscriptionEndpoint: 'aks-service-connection'
+    action: 'deploy'
+    connectionType: 'azureResourceManager'
+    azureSubscriptionConnection: 'aks-service-connection'
     azureResourceGroup: 'aks-rg'
     kubernetesCluster: 'aks-demo'
-    command: 'apply'
-    secretType: 'generic'
-    secretArguments: 'create secret generic gh-token --from-literal=encoded-value=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'
-    secretName: 'gh-token'
+    manifests: 'deployment-manifest.yml'
